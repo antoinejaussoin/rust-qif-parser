@@ -1,5 +1,4 @@
 use crate::date;
-use std::fs;
 
 pub struct Qif {
   pub file_type: String,
@@ -90,6 +89,7 @@ fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::fs;
   #[test]
   fn test_wikipedia_example() {
     let content = fs::read_to_string("data/example1.qif").unwrap();
