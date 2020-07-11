@@ -84,6 +84,30 @@ fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
   if line.starts_with("C") {
     item.cleared_status = line[1..].to_string();
   }
+
+  // Split
+  if line.starts_with("S") {
+    let split = QifSplit {
+      category: line[1..].to_string(),
+      memo: "".to_string(),
+      amount: 0.0,
+    };
+    item.splits.push(split);
+  }
+  if line.starts_with("E") {
+    let split = match item.splits.last_mut() {
+      None => panic!("There should be a split item here"),
+      Some(item) => item,
+    };
+    split.memo = line[1..].to_string();
+  }
+  if line.starts_with("$") {
+    let split = match item.splits.last_mut() {
+      None => panic!("There should be a split item here"),
+      Some(item) => item,
+    };
+    // split.amount = line[1..].to_string();
+  }
 }
 
 #[cfg(test)]
@@ -108,5 +132,9 @@ mod tests {
     assert_eq!(first.category, "[TestExport]");
     assert_eq!(first.payee, "Opening Balance");
     assert_eq!(first.cleared_status, "X");
+
+    // Second item (splits)
+    let second = &result.items[1];
+    assert_eq!(second.splits.len(), 2);
   }
 }
