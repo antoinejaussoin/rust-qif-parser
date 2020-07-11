@@ -1,4 +1,5 @@
 use crate::date;
+use std::fs;
 
 pub struct Qif {
   pub file_type: String,
@@ -10,6 +11,7 @@ pub struct QifItem {
   pub amount: f32,
   pub payee: String,
   pub category: String,
+  pub cleared_status: String,
   pub splits: Vec<QifSplit>,
 }
 
@@ -25,6 +27,7 @@ fn empty_item() -> QifItem {
     amount: 0.0,
     payee: "".to_string(),
     category: "".to_string(),
+    cleared_status: "".to_string(),
     splits: Vec::new(),
   }
 }
@@ -55,9 +58,9 @@ pub fn parse_with_format(qif_content: &str, date_format: &str) -> Qif {
   result
 }
 
-pub fn parse(qif_content: &str) -> Qif {
-  parse_with_format(qif_content, "%d/%m/%Y")
-}
+// pub fn parse(qif_content: &str) -> Qif {
+//   parse_with_format(qif_content, "%d/%m/%Y")
+// }
 
 fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
   if line.starts_with("T") || line.starts_with("U") {
@@ -78,5 +81,32 @@ fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
   }
   if line.starts_with("D") {
     item.date = date::parse_date(&line[1..], date_format);
+  }
+  if line.starts_with("C") {
+    item.cleared_status = line[1..].to_string();
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  #[test]
+  fn test_wikipedia_example() {
+    let content = fs::read_to_string("data/example1.qif").unwrap();
+    let result = parse_with_format(&content, "%m/%d'%Y");
+    assert!(content.len() > 0);
+    // QIF metadata
+    assert_eq!(result.file_type, "Bank");
+
+    // Items
+    assert!(result.items.len() == 6);
+
+    // First items
+    let first = &result.items[0];
+    assert_eq!(first.date, "2020-02-10");
+    assert_eq!(first.amount, 0.0);
+    assert_eq!(first.category, "[TestExport]");
+    assert_eq!(first.payee, "Opening Balance");
+    assert_eq!(first.cleared_status, "X");
   }
 }

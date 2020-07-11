@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+
 pub fn parse_date(date: &str, date_format: &str) -> String {
   match NaiveDate::parse_from_str(date, date_format) {
     Err(err) => {
@@ -25,6 +26,4 @@ mod tests {
   fn test_parse_month_first_date() {
     assert_eq!(parse_date("02/13/2020", "%m/%d/%Y"), "2020-02-13");
   }
-
-  fn test_wikipedia_example() {}
 }
