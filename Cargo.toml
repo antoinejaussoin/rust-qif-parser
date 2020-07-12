@@ -1,5 +1,6 @@
 [package]
 name = "qif_parser"
+description = "This library parses Quicken Interchange Format (QIF) files"
 version = "0.0.1"
 authors = ["Antoine Jaussoin <antoine@jaussoin.com>"]
 edition = "2018"
