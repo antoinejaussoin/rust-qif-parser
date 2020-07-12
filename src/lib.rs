@@ -79,10 +79,11 @@ pub fn parse(qif_content: &str, date_format: &str) -> Result<Qif, errors::QifPar
 fn parse_number(line: &str) -> Result<f32, errors::QifParsingError> {
   match line[1..].to_string().trim().parse() {
     Err(_err) => {
-      let mut msg = "Could not parse the following as a number: '".to_string();
-      msg.push_str(&line[1..]);
-      msg.push_str("'");
-      Err(errors::QifParsingError::new(&msg[..]))
+      let msg = format!(
+        "Could not parse the following as a number: '{}'",
+        &line[1..]
+      );
+      Err(errors::QifParsingError::new(&msg))
     }
     Ok(amount) => Ok(amount),
   }
@@ -106,7 +107,10 @@ fn parse_line(
     item.category = line[1..].to_string();
   }
   if line.starts_with("D") {
-    item.date = date::parse_date(&line[1..], date_format);
+    item.date = match date::parse_date(&line[1..], date_format) {
+      Err(err) => return Err(err),
+      Ok(date) => date,
+    };
   }
   if line.starts_with("C") {
     item.cleared_status = line[1..].to_string();
@@ -213,5 +217,17 @@ mod tests {
     assert_eq!(third.category, "Transport");
     assert_eq!(third.payee, "Infinity Motor Cycles");
     assert_eq!(third.address[0], "30-32 FairyLand High Street");
+  }
+
+  #[test]
+  fn test_errors() {
+    let content = fs::read_to_string("data/monzo.qif").unwrap();
+    match parse(&content, "%m/%d/%Y") {
+      Err(err) => assert_eq!(
+        err.details,
+        "Error when parsing date: input is out of range 27/08/2018"
+      ),
+      Ok(_) => panic!("It should have failed"),
+    };
   }
 }

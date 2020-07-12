@@ -1,10 +1,18 @@
-# rust-qif-parser
+# QIF Parser
 
 QIF (Quicken Interchange Format) parser in Rust
 
-This is my first Rust package, work in progress, still learning the ropes.
+## What is QIF?
 
-Don't use this until version 0.1.0 is released.
+QIF is a format invented by Quicken to record financial data.
+
+You can read more on [this Wikipedia article](https://en.wikipedia.org/wiki/Quicken_Interchange_Format).
+
+## What does this library do?
+
+This library will take your QIF data as a string, parse it, and return some structured data for further processing.
+
+## Various links
 
 https://en.wikipedia.org/wiki/Quicken_Interchange_Format
 

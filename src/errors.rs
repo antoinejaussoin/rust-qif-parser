@@ -3,7 +3,7 @@ use std::fmt;
 
 #[derive(Debug)]
 pub struct QifParsingError {
-  details: String,
+  pub details: String,
 }
 
 impl QifParsingError {
