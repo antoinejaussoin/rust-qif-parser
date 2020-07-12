@@ -1,10 +1,14 @@
 mod date;
 
+/// Represents a QIF file
+/// It has a file_type (Bank, etc.) and a collection of items
 pub struct Qif {
   pub file_type: String,
   pub items: Vec<QifItem>,
 }
 
+/// Represents a transaction
+/// It has a date and an amount, and possibly some splits
 pub struct QifItem {
   pub date: String,
   pub amount: f32,
