@@ -1,4 +1,5 @@
 mod date;
+mod errors;
 
 /// Represents a QIF file
 /// It has a file_type (Bank, etc.) and a collection of items
@@ -46,8 +47,8 @@ fn empty_item() -> QifItem {
 /// receive QIF files with completely different formats.
 /// Please use, for the date_format, the format you would use with Chrono (https://docs.rs/chrono/0.4.13/chrono/format/strftime/index.html#specifiers)
 ///
-/// The parser will then return a Qif data structure
-pub fn parse(qif_content: &str, date_format: &str) -> Qif {
+/// The parser will then return a Qif data structure or an error
+pub fn parse(qif_content: &str, date_format: &str) -> Result<Qif, errors::QifParsingError> {
   let mut results: Vec<QifItem> = Vec::new();
   let mut result = Qif {
     file_type: "".to_string(),
@@ -64,27 +65,39 @@ pub fn parse(qif_content: &str, date_format: &str) -> Qif {
       results.push(current);
       current = empty_item();
     }
-    parse_line(line, &mut current, date_format);
+    match parse_line(line, &mut current, date_format) {
+      Err(err) => return Err(err),
+      Ok(()) => (),
+    }
   }
 
   result.items = results;
 
-  result
+  Ok(result)
 }
 
-fn parse_number(line: &str) -> f32 {
+fn parse_number(line: &str) -> Result<f32, errors::QifParsingError> {
   match line[1..].to_string().trim().parse() {
-    Err(err) => {
-      println!("Error: {} '{}'", err, line[1..].to_string().trim());
-      0.0
+    Err(_err) => {
+      let mut msg = "Could not parse the following as a number: '".to_string();
+      msg.push_str(&line[1..]);
+      msg.push_str("'");
+      Err(errors::QifParsingError::new(&msg[..]))
     }
-    Ok(amount) => amount,
+    Ok(amount) => Ok(amount),
   }
 }
 
-fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
+fn parse_line(
+  line: &str,
+  item: &mut QifItem,
+  date_format: &str,
+) -> Result<(), errors::QifParsingError> {
   if line.starts_with("T") || line.starts_with("U") {
-    item.amount = parse_number(line);
+    item.amount = match parse_number(line) {
+      Err(err) => return Err(err),
+      Ok(amount) => amount,
+    };
   }
   if line.starts_with("P") {
     item.payee = line[1..].to_string();
@@ -113,18 +126,30 @@ fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
   }
   if line.starts_with("E") {
     let split = match item.splits.last_mut() {
-      None => panic!("There should be a split item here"),
+      None => {
+        return Err(errors::QifParsingError::new(
+          "There should be a split item here",
+        ))
+      }
       Some(item) => item,
     };
     split.memo = line[1..].to_string();
   }
   if line.starts_with("$") {
     let split = match item.splits.last_mut() {
-      None => panic!("There should be a split item here"),
+      None => {
+        return Err(errors::QifParsingError::new(
+          "There should be a split item here",
+        ))
+      }
       Some(item) => item,
     };
-    split.amount = parse_number(line);
+    split.amount = match parse_number(line) {
+      Err(err) => return Err(err),
+      Ok(amount) => amount,
+    };
   }
+  Ok(())
 }
 
 #[cfg(test)]
@@ -134,7 +159,7 @@ mod tests {
   #[test]
   fn test_wikipedia_example() {
     let content = fs::read_to_string("data/wikipedia.qif").unwrap();
-    let result = parse(&content, "%m/%d'%Y");
+    let result = parse(&content, "%m/%d'%Y").unwrap();
     assert!(content.len() > 0);
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
@@ -164,7 +189,7 @@ mod tests {
   #[test]
   fn test_monzo_example() {
     let content = fs::read_to_string("data/monzo.qif").unwrap();
-    let result = parse(&content, "%d/%m/%Y");
+    let result = parse(&content, "%d/%m/%Y").unwrap();
     assert!(content.len() > 0);
 
     // QIF metadata
