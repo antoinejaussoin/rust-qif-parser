@@ -11,6 +11,7 @@ pub struct QifItem {
   pub payee: String,
   pub category: String,
   pub cleared_status: String,
+  pub address: Vec<String>,
   pub splits: Vec<QifSplit>,
 }
 
@@ -28,6 +29,7 @@ fn empty_item() -> QifItem {
     category: "".to_string(),
     cleared_status: "".to_string(),
     splits: Vec::new(),
+    address: Vec::new(),
   }
 }
 
@@ -39,7 +41,6 @@ pub fn parse_with_format(qif_content: &str, date_format: &str) -> Qif {
   };
   let mut current = empty_item();
   let lines: Vec<&str> = qif_content.split("\n").collect();
-  println!("We've got {} lines", lines.len());
 
   for line in lines {
     if line.starts_with("!Type") {
@@ -57,20 +58,19 @@ pub fn parse_with_format(qif_content: &str, date_format: &str) -> Qif {
   result
 }
 
-// pub fn parse(qif_content: &str) -> Qif {
-//   parse_with_format(qif_content, "%d/%m/%Y")
-// }
+fn parse_number(line: &str) -> f32 {
+  match line[1..].to_string().trim().parse() {
+    Err(err) => {
+      println!("Error: {} '{}'", err, line[1..].to_string().trim());
+      0.0
+    }
+    Ok(amount) => amount,
+  }
+}
 
 fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
   if line.starts_with("T") || line.starts_with("U") {
-    let amount: f32 = match line[1..].to_string().trim().parse() {
-      Err(err) => {
-        println!("Error: {} '{}'", err, line[1..].to_string().trim());
-        0.0
-      }
-      Ok(amount) => amount,
-    };
-    item.amount = amount;
+    item.amount = parse_number(line);
   }
   if line.starts_with("P") {
     item.payee = line[1..].to_string();
@@ -83,6 +83,9 @@ fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
   }
   if line.starts_with("C") {
     item.cleared_status = line[1..].to_string();
+  }
+  if line.starts_with("A") {
+    item.address.push(line[1..].to_string());
   }
 
   // Split
@@ -106,7 +109,7 @@ fn parse_line(line: &str, item: &mut QifItem, date_format: &str) {
       None => panic!("There should be a split item here"),
       Some(item) => item,
     };
-    // split.amount = line[1..].to_string();
+    split.amount = parse_number(line);
   }
 }
 
@@ -116,14 +119,14 @@ mod tests {
   use std::fs;
   #[test]
   fn test_wikipedia_example() {
-    let content = fs::read_to_string("data/example1.qif").unwrap();
+    let content = fs::read_to_string("data/wikipedia.qif").unwrap();
     let result = parse_with_format(&content, "%m/%d'%Y");
     assert!(content.len() > 0);
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
 
     // Items
-    assert!(result.items.len() == 6);
+    assert_eq!(result.items.len(), 6);
 
     // First items
     let first = &result.items[0];
@@ -136,5 +139,40 @@ mod tests {
     // Second item (splits)
     let second = &result.items[1];
     assert_eq!(second.splits.len(), 2);
+    assert_eq!(second.splits[0].category, "Bills:Cell Phone");
+    assert_eq!(second.splits[0].memo, "sign up credit");
+    assert_eq!(second.splits[0].amount, -15.0);
+    assert_eq!(second.splits[1].category, "Bills:Cell Phone");
+    assert_eq!(second.splits[1].memo, "new account");
+    assert_eq!(second.splits[1].amount, 82.50);
+  }
+
+  #[test]
+  fn test_monzo_example() {
+    let content = fs::read_to_string("data/monzo.qif").unwrap();
+    let result = parse_with_format(&content, "%d/%m/%Y");
+    assert!(content.len() > 0);
+
+    // QIF metadata
+    assert_eq!(result.file_type, "Bank");
+
+    // Items
+    assert_eq!(result.items.len(), 13);
+
+    // First items
+    let first = &result.items[0];
+    assert_eq!(first.date, "2018-08-27");
+    assert_eq!(first.amount, 1000.0);
+    assert_eq!(first.category, "");
+    assert_eq!(first.payee, "Jane Doe");
+    assert_eq!(first.cleared_status, "");
+
+    // Third items
+    let third = &result.items[2];
+    assert_eq!(third.date, "2018-08-28");
+    assert_eq!(third.amount, -15.0);
+    assert_eq!(third.category, "Transport");
+    assert_eq!(third.payee, "Infinity Motor Cycles");
+    assert_eq!(third.address[0], "30-32 FairyLand High Street");
   }
 }
