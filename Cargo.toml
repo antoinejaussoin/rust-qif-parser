@@ -2,7 +2,6 @@
 name = "qif_parser"
 description = "This library parses Quicken Interchange Format (QIF) files"
 license = "MIT"
-license-file = "LICENSE"
 version = "0.0.2"
 authors = ["Antoine Jaussoin <antoine@jaussoin.com>"]
 edition = "2018"

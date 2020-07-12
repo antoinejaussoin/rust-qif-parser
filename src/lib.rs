@@ -3,6 +3,7 @@ mod date;
 /// Represents a QIF file
 /// It has a file_type (Bank, etc.) and a collection of items
 pub struct Qif {
+  /// File type can be one of: Cash, Bank, CCard, Invst, Oth A, Oth L, Invoice
   pub file_type: String,
   pub items: Vec<QifItem>,
 }
@@ -19,6 +20,7 @@ pub struct QifItem {
   pub splits: Vec<QifSplit>,
 }
 
+/// Represent a Split, which is basically a portion of a transaction
 pub struct QifSplit {
   pub category: String,
   pub memo: String,
@@ -37,7 +39,15 @@ fn empty_item() -> QifItem {
   }
 }
 
-pub fn parse_with_format(qif_content: &str, date_format: &str) -> Qif {
+/// This is the parsing function. It takes the text content of your QIF file as an argument,
+/// and the date format.
+///
+/// Indeed, the date in a QIF file doesn't have a pre-determined format, which means you could
+/// receive QIF files with completely different formats.
+/// Please use, for the date_format, the format you would use with Chrono (https://docs.rs/chrono/0.4.13/chrono/format/strftime/index.html#specifiers)
+///
+/// The parser will then return a Qif data structure
+pub fn parse(qif_content: &str, date_format: &str) -> Qif {
   let mut results: Vec<QifItem> = Vec::new();
   let mut result = Qif {
     file_type: "".to_string(),
@@ -124,7 +134,7 @@ mod tests {
   #[test]
   fn test_wikipedia_example() {
     let content = fs::read_to_string("data/wikipedia.qif").unwrap();
-    let result = parse_with_format(&content, "%m/%d'%Y");
+    let result = parse(&content, "%m/%d'%Y");
     assert!(content.len() > 0);
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
@@ -154,7 +164,7 @@ mod tests {
   #[test]
   fn test_monzo_example() {
     let content = fs::read_to_string("data/monzo.qif").unwrap();
-    let result = parse_with_format(&content, "%d/%m/%Y");
+    let result = parse(&content, "%d/%m/%Y");
     assert!(content.len() > 0);
 
     // QIF metadata
