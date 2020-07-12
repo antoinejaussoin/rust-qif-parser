@@ -1,4 +1,4 @@
-use crate::date;
+mod date;
 
 pub struct Qif {
   pub file_type: String,

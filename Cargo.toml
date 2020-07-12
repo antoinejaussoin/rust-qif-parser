@@ -1,6 +1,6 @@
 [package]
-name = "rust-qif-parser"
-version = "0.1.0"
+name = "qif_parser"
+version = "0.0.1"
 authors = ["Antoine Jaussoin <antoine@jaussoin.com>"]
 edition = "2018"
 
