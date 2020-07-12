@@ -3,9 +3,14 @@ name = "qif_parser"
 description = "This library parses Quicken Interchange Format (QIF) files"
 license = "MIT"
 license-file = "LICENSE"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Antoine Jaussoin <antoine@jaussoin.com>"]
 edition = "2018"
+readme = "README.md"
+repository = "https://github.com/antoinejaussoin/rust-qif-parser"
+keywords = ["QIF", "Quicken", "Quicken Interchange Format", "parser"]
+categories = ["parser-implementations"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
