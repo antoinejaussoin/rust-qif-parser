@@ -1,0 +1,13 @@
+!Type:Bank
+D27/08/2018
+T10,000.00
+PJane Doe
+^
+D27/08/2018
+T-10,000,000.00
+PHuge Amount 😅 with UTF8
+LShopping
+AAddress line 1
+AAddress line 2
+AAddress line 3
+^

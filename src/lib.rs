@@ -77,7 +77,7 @@ pub fn parse(qif_content: &str, date_format: &str) -> Result<Qif, errors::QifPar
 }
 
 fn parse_number(line: &str) -> Result<f32, errors::QifParsingError> {
-  match line[1..].to_string().trim().parse() {
+  match line[1..].to_string().trim().replace(',', "").parse() {
     Err(_err) => {
       let msg = format!(
         "Could not parse the following as a number: '{}'",
@@ -231,7 +231,7 @@ mod tests {
     // Items
     assert_eq!(result.items.len(), 12);
 
-    // // First items
+    // First items
     let first = &result.items[0];
     assert_eq!(first.date, "2020-05-19");
     assert_eq!(first.amount, 500.0);
@@ -239,13 +239,45 @@ mod tests {
     assert_eq!(first.payee, "REM CHQ REF1234");
     assert_eq!(first.cleared_status, "");
 
-    // // Third items
+    // Third items
     let third = &result.items[2];
     assert_eq!(third.date, "2020-06-02");
     assert_eq!(third.amount, -9.59);
     assert_eq!(third.category, "");
     assert_eq!(third.payee, "KIMSUFI CARTE 1234 PAIEMENT CB 0106 ROUBAIX");
     assert_eq!(third.address.len(), 0);
+  }
+
+  #[test]
+  fn test_nasty_example() {
+    let content = fs::read_to_string("data/nasty.qif").unwrap();
+    let result = parse(&content, "%d/%m/%Y").unwrap();
+    assert!(content.len() > 0);
+
+    // QIF metadata
+    assert_eq!(result.file_type, "Bank");
+
+    // Items
+    assert_eq!(result.items.len(), 2);
+
+    // First items
+    let first = &result.items[0];
+    assert_eq!(first.date, "2018-08-27");
+    assert_eq!(first.amount, 10_000.0);
+    assert_eq!(first.category, "");
+    assert_eq!(first.payee, "Jane Doe");
+    assert_eq!(first.cleared_status, "");
+
+    // Second items
+    let third = &result.items[1];
+    assert_eq!(third.date, "2018-08-27");
+    assert_eq!(third.amount, -10_000_000.0);
+    assert_eq!(third.category, "Shopping");
+    assert_eq!(third.payee, "Huge Amount 😅 with UTF8");
+    assert_eq!(third.address.len(), 3);
+    assert_eq!(third.address[0], "Address line 1");
+    assert_eq!(third.address[1], "Address line 2");
+    assert_eq!(third.address[2], "Address line 3");
   }
 
   #[test]
