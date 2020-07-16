@@ -55,7 +55,7 @@ pub fn parse(qif_content: &str, date_format: &str) -> Result<Qif, errors::QifPar
     items: Vec::new(),
   };
   let mut current = empty_item();
-  let lines: Vec<&str> = qif_content.split("\n").collect();
+  let lines: Vec<&str> = qif_content.lines().collect();
 
   for line in lines {
     if line.starts_with("!Type") {
@@ -217,6 +217,35 @@ mod tests {
     assert_eq!(third.category, "Transport");
     assert_eq!(third.payee, "Infinity Motor Cycles");
     assert_eq!(third.address[0], "30-32 FairyLand High Street");
+  }
+
+  #[test]
+  fn test_cic_example() {
+    let content = fs::read_to_string("data/cic.qif").unwrap();
+    let result = parse(&content, "%d/%m/%y").unwrap();
+    assert!(content.len() > 0);
+
+    // QIF metadata
+    assert_eq!(result.file_type, "Bank");
+
+    // Items
+    assert_eq!(result.items.len(), 12);
+
+    // // First items
+    let first = &result.items[0];
+    assert_eq!(first.date, "2020-05-19");
+    assert_eq!(first.amount, 500.0);
+    assert_eq!(first.category, "");
+    assert_eq!(first.payee, "REM CHQ REF1234");
+    assert_eq!(first.cleared_status, "");
+
+    // // Third items
+    let third = &result.items[2];
+    assert_eq!(third.date, "2020-06-02");
+    assert_eq!(third.amount, -9.59);
+    assert_eq!(third.category, "");
+    assert_eq!(third.payee, "KIMSUFI CARTE 1234 PAIEMENT CB 0106 ROUBAIX");
+    assert_eq!(third.address.len(), 0);
   }
 
   #[test]
