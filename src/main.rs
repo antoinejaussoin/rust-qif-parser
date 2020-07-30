@@ -11,6 +11,6 @@ fn main() {
     for item in &parsed.items {
         println!("{} {} {}", item.date, item.amount, item.payee);
     }
-    let sum: f32 = parsed.items.iter().map(|item| item.amount).sum();
+    let sum: f64 = parsed.items.iter().map(|item| item.amount).sum();
     println!("Account balance: {}", sum);
 }

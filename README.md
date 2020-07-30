@@ -19,3 +19,9 @@ https://en.wikipedia.org/wiki/Quicken_Interchange_Format
 https://rust-lang.github.io/api-guidelines/checklist.html
 
 https://stevedonovan.github.io/rust-gentle-intro/6-error-handling.html
+
+## Change Log
+
+### Version 0.0.6
+
+- Use `f64` instead of `f32`
