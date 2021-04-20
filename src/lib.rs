@@ -3,21 +3,21 @@ mod errors;
 
 /// Represents a QIF file
 /// It has a file_type (Bank, etc.) and a collection of items
-pub struct Qif {
+pub struct Qif<'a> {
     /// File type can be one of: Cash, Bank, CCard, Invst, Oth A, Oth L, Invoice
-    pub file_type: String,
-    pub items: Vec<QifItem>,
+    pub file_type: &'a str,
+    pub items: Vec<QifItem<'a>>,
 }
 
 /// Represents a transaction
 /// It has a date and an amount, and possibly some splits
-pub struct QifItem {
+pub struct QifItem<'a> {
     pub date: String,
     pub amount: f64,
-    pub payee: String,
-    pub category: String,
-    pub cleared_status: String,
-    pub address: Vec<String>,
+    pub payee: &'a str,
+    pub category: &'a str,
+    pub cleared_status: &'a str,
+    pub address: Vec<&'a str>,
     pub splits: Vec<QifSplit>,
 }
 
@@ -28,13 +28,13 @@ pub struct QifSplit {
     pub amount: f64,
 }
 
-fn empty_item() -> QifItem {
+fn empty_item<'a>() -> QifItem<'a> {
     QifItem {
         date: "".to_string(),
         amount: 0.0,
-        payee: "".to_string(),
-        category: "".to_string(),
-        cleared_status: "".to_string(),
+        payee: "",
+        category: "",
+        cleared_status: "",
         splits: Vec::new(),
         address: Vec::new(),
     }
@@ -48,10 +48,13 @@ fn empty_item() -> QifItem {
 /// Please use, for the date_format, the format you would use with Chrono (https://docs.rs/chrono/0.4.13/chrono/format/strftime/index.html#specifiers)
 ///
 /// The parser will then return a Qif data structure or an error
-pub fn parse(qif_content: &str, date_format: &str) -> Result<Qif, errors::QifParsingError> {
+pub fn parse<'a>(
+    qif_content: &'a str,
+    date_format: &str,
+) -> Result<Qif<'a>, errors::QifParsingError> {
     let mut results: Vec<QifItem> = Vec::new();
     let mut result = Qif {
-        file_type: "".to_string(),
+        file_type: "",
         items: Vec::new(),
     };
     let mut current = empty_item();
@@ -59,7 +62,7 @@ pub fn parse(qif_content: &str, date_format: &str) -> Result<Qif, errors::QifPar
 
     for line in lines {
         if line.starts_with("!Type") {
-            result.file_type = line[6..].to_string();
+            result.file_type = &line[6..];
         }
         if line.starts_with("^") {
             results.push(current);
@@ -89,9 +92,9 @@ fn parse_number(line: &str) -> Result<f64, errors::QifParsingError> {
     }
 }
 
-fn parse_line(
-    line: &str,
-    item: &mut QifItem,
+fn parse_line<'a>(
+    line: &'a str,
+    item: &mut QifItem<'a>,
     date_format: &str,
 ) -> Result<(), errors::QifParsingError> {
     if line.starts_with("T") || line.starts_with("U") {
@@ -101,10 +104,10 @@ fn parse_line(
         };
     }
     if line.starts_with("P") {
-        item.payee = line[1..].to_string();
+        item.payee = &line[1..];
     }
     if line.starts_with("L") {
-        item.category = line[1..].to_string();
+        item.category = &line[1..];
     }
     if line.starts_with("D") {
         item.date = match date::parse_date(&line[1..], date_format) {
@@ -113,10 +116,10 @@ fn parse_line(
         };
     }
     if line.starts_with("C") {
-        item.cleared_status = line[1..].to_string();
+        item.cleared_status = &line[1..];
     }
     if line.starts_with("A") {
-        item.address.push(line[1..].to_string());
+        item.address.push(&line[1..]);
     }
 
     // Split
