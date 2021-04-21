@@ -18,13 +18,13 @@ pub struct QifItem<'a> {
     pub category: &'a str,
     pub cleared_status: &'a str,
     pub address: Vec<&'a str>,
-    pub splits: Vec<QifSplit>,
+    pub splits: Vec<QifSplit<'a>>,
 }
 
 /// Represent a Split, which is basically a portion of a transaction
-pub struct QifSplit {
-    pub category: String,
-    pub memo: String,
+pub struct QifSplit<'a> {
+    pub category: &'a str,
+    pub memo: &'a str,
     pub amount: f64,
 }
 
@@ -46,6 +46,12 @@ fn empty_item<'a>() -> QifItem<'a> {
 /// Indeed, the date in a QIF file doesn't have a pre-determined format, which means you could
 /// receive QIF files with completely different formats.
 /// Please use, for the date_format, the format you would use with Chrono (https://docs.rs/chrono/0.4.13/chrono/format/strftime/index.html#specifiers)
+///
+/// Some examples: (all for November 1st, 1982)
+/// 01/11/1982 -> %d/%m/%Y
+/// 01/11/82   -> %d/%m/%y
+/// 11/01/1982 -> %m/%d/%Y
+/// 11/01'1982 -> %m/%d'%Y
 ///
 /// The parser will then return a Qif data structure or an error
 pub fn parse<'a>(
@@ -125,8 +131,8 @@ fn parse_line<'a>(
     // Split
     if line.starts_with("S") {
         let split = QifSplit {
-            category: line[1..].to_string(),
-            memo: "".to_string(),
+            category: &line[1..],
+            memo: "",
             amount: 0.0,
         };
         item.splits.push(split);
@@ -140,7 +146,7 @@ fn parse_line<'a>(
             }
             Some(item) => item,
         };
-        split.memo = line[1..].to_string();
+        split.memo = &line[1..];
     }
     if line.starts_with("$") {
         let split = match item.splits.last_mut() {
