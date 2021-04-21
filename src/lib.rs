@@ -7,6 +7,7 @@ pub struct Qif<'a> {
     /// File type can be one of: Cash, Bank, CCard, Invst, Oth A, Oth L, Invoice
     pub file_type: &'a str,
     pub items: Vec<QifItem<'a>>,
+    pub investments: Vec<QifInvestment<'a>>,
 }
 
 /// Represents a transaction
@@ -15,6 +16,7 @@ pub struct QifItem<'a> {
     /// Parsed date, with format YYYY-MM-DD
     pub date: String,
     pub amount: f64,
+    pub memo: &'a str,
     pub payee: &'a str,
     pub category: &'a str,
     pub cleared_status: &'a str,
@@ -23,7 +25,7 @@ pub struct QifItem<'a> {
     pub number_of_the_check: &'a str,
 }
 
-/// Represent a Split, which is basically a portion of a transaction
+/// Represents a Split, which is basically a portion of a transaction
 pub struct QifSplit<'a> {
     pub category: &'a str,
     pub memo: &'a str,
@@ -31,16 +33,46 @@ pub struct QifSplit<'a> {
     pub number_of_the_check: &'a str,
 }
 
+/// Represents an Investment
+pub struct QifInvestment<'a> {
+    pub date: String,
+    pub amount: f64,
+    pub memo: &'a str,
+    pub cleared_status: &'a str,
+    pub action: &'a str,
+    pub security_name: &'a str,
+    pub price: f64,
+    pub quantity: f64,
+    pub commission_cost: f64,
+    pub amount_transferred: f64,
+}
+
 fn empty_item<'a>() -> QifItem<'a> {
     QifItem {
         date: "".to_string(),
         amount: 0.0,
+        memo: "",
         payee: "",
         category: "",
         cleared_status: "",
         splits: Vec::new(),
         address: Vec::new(),
         number_of_the_check: "",
+    }
+}
+
+fn empty_investment<'a>() -> QifInvestment<'a> {
+    QifInvestment {
+        date: "".to_string(),
+        amount: 0.0,
+        cleared_status: "",
+        memo: "",
+        action: "",
+        amount_transferred: 0.0,
+        commission_cost: 0.0,
+        price: 0.0,
+        quantity: 0.0,
+        security_name: "",
     }
 }
 
@@ -63,28 +95,48 @@ pub fn parse<'a>(
     date_format: &str,
 ) -> Result<Qif<'a>, errors::QifParsingError> {
     let mut results: Vec<QifItem> = Vec::new();
+    let mut investments: Vec<QifInvestment> = Vec::new();
     let mut result = Qif {
         file_type: "",
         items: Vec::new(),
+        investments: Vec::new(),
     };
-    let mut current = empty_item();
+    let mut current_item = empty_item();
+    let mut current_investment = empty_investment();
+    let mut is_investment = false;
     let lines: Vec<&str> = qif_content.lines().collect();
 
     for line in lines {
+        if line.starts_with("!Type:Invst") {
+            is_investment = true;
+        }
         if line.starts_with("!Type") {
             result.file_type = &line[6..];
         }
         if line.starts_with("^") {
-            results.push(current);
-            current = empty_item();
+            if is_investment {
+                investments.push(current_investment);
+            } else {
+                results.push(current_item);
+            }
+            current_item = empty_item();
+            current_investment = empty_investment();
         }
-        match parse_line(line, &mut current, date_format) {
-            Err(err) => return Err(err),
-            Ok(()) => (),
+        if is_investment {
+            match parse_investment(line, &mut current_investment, date_format) {
+                Err(err) => return Err(err),
+                Ok(()) => (),
+            }
+        } else {
+            match parse_line(line, &mut current_item, date_format) {
+                Err(err) => return Err(err),
+                Ok(()) => (),
+            }
         }
     }
 
     result.items = results;
+    result.investments = investments;
 
     Ok(result)
 }
@@ -100,6 +152,47 @@ fn parse_number(line: &str) -> Result<f64, errors::QifParsingError> {
         }
         Ok(amount) => Ok(amount),
     }
+}
+
+fn parse_investment<'a>(
+    line: &'a str,
+    item: &mut QifInvestment<'a>,
+    date_format: &str,
+) -> Result<(), errors::QifParsingError> {
+    match &line[..1] {
+        "T" | "U" => {
+            item.amount = match parse_number(line) {
+                Err(err) => return Err(err),
+                Ok(amount) => amount,
+            };
+        }
+        "D" => {
+            item.date = match date::parse_date(&line[1..], date_format) {
+                Err(err) => return Err(err),
+                Ok(date) => date,
+            };
+        }
+        "C" => item.cleared_status = &line[1..],
+        "M" => item.memo = &line[1..],
+        "N" => item.action = &line[1..],
+        "Y" => item.security_name = &line[1..],
+        "I" => {
+            item.price = match parse_number(line) {
+                Err(err) => return Err(err),
+                Ok(amount) => amount,
+            };
+        }
+        "Q" => {
+            item.quantity = match parse_number(line) {
+                Err(err) => return Err(err),
+                Ok(amount) => amount,
+            };
+        }
+
+        _ => {}
+    };
+
+    Ok(())
 }
 
 fn parse_line<'a>(
@@ -123,6 +216,7 @@ fn parse_line<'a>(
             };
         }
         "C" => item.cleared_status = &line[1..],
+        "M" => item.memo = &line[1..],
         "A" => item.address.push(&line[1..]),
         "N" => {
             match item.splits.last_mut() {
@@ -205,6 +299,33 @@ mod tests {
     }
 
     #[test]
+    fn test_wikipedia_investment_example() {
+        let content = fs::read_to_string("data/wikipedia_investments.qif").unwrap();
+        let result = parse(&content, "%m/%d'%y").unwrap();
+        assert!(content.len() > 0);
+
+        // QIF metadata
+        assert_eq!(result.file_type, "Invst");
+
+        // Counting items
+        assert_eq!(result.items.len(), 0);
+        assert_eq!(result.investments.len(), 2);
+
+        // First items
+        let first = &result.investments[0];
+        assert_eq!(first.date, "2007-12-21");
+        assert_eq!(first.action, "Buy");
+        assert_eq!(first.security_name, "IBM");
+        assert_eq!(first.amount, 11010.00);
+        assert_eq!(first.price, 110.10);
+        assert_eq!(first.quantity, 100.0);
+        assert_eq!(
+            first.memo,
+            "Purchase of 100 shares of IBM stock on 21 December 2007 at $110.10 per share"
+        );
+    }
+
+    #[test]
     fn test_wikipedia_example() {
         let content = fs::read_to_string("data/wikipedia.qif").unwrap();
         let result = parse(&content, "%m/%d'%Y").unwrap();
@@ -232,6 +353,11 @@ mod tests {
         assert_eq!(second.splits[1].category, "Bills:Cell Phone");
         assert_eq!(second.splits[1].memo, "new account");
         assert_eq!(second.splits[1].amount, 82.50);
+
+        // Third item (memo)
+        let third = &result.items[2];
+        assert_eq!(third.memo, "money back for damaged parcel");
+        assert_eq!(third.category, "Miscellaneous");
     }
 
     #[test]
