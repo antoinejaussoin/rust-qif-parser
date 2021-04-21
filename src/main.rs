@@ -3,8 +3,6 @@ use std::fs;
 
 fn main() {
     println!("QIF Parser Example");
-    // let content = fs::read_to_string("data/wikipedia.qif").unwrap();
-    // let parsed = parse(&content, "%m/%d'%Y").unwrap();
     let content = fs::read_to_string("data/cic.qif").unwrap();
     let parsed = parse(&content, "%d/%m/%y").unwrap();
     println!("Type: {}", parsed.file_type);
