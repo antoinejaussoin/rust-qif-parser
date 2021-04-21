@@ -12,6 +12,7 @@ pub struct Qif<'a> {
 /// Represents a transaction
 /// It has a date and an amount, and possibly some splits
 pub struct QifItem<'a> {
+    /// Parsed date, with format YYYY-MM-DD
     pub date: String,
     pub amount: f64,
     pub payee: &'a str,
@@ -19,6 +20,7 @@ pub struct QifItem<'a> {
     pub cleared_status: &'a str,
     pub address: Vec<&'a str>,
     pub splits: Vec<QifSplit<'a>>,
+    pub number_of_the_check: &'a str,
 }
 
 /// Represent a Split, which is basically a portion of a transaction
@@ -26,6 +28,7 @@ pub struct QifSplit<'a> {
     pub category: &'a str,
     pub memo: &'a str,
     pub amount: f64,
+    pub number_of_the_check: &'a str,
 }
 
 fn empty_item<'a>() -> QifItem<'a> {
@@ -37,6 +40,7 @@ fn empty_item<'a>() -> QifItem<'a> {
         cleared_status: "",
         splits: Vec::new(),
         address: Vec::new(),
+        number_of_the_check: "",
     }
 }
 
@@ -127,6 +131,12 @@ fn parse_line<'a>(
     if line.starts_with("A") {
         item.address.push(&line[1..]);
     }
+    if line.starts_with("N") {
+        match item.splits.last_mut() {
+            None => item.number_of_the_check = &line[1..],
+            Some(item) => item.number_of_the_check = &line[1..],
+        };
+    }
 
     // Split
     if line.starts_with("S") {
@@ -134,6 +144,7 @@ fn parse_line<'a>(
             category: &line[1..],
             memo: "",
             amount: 0.0,
+            number_of_the_check: "",
         };
         item.splits.push(split);
     }
@@ -169,6 +180,35 @@ fn parse_line<'a>(
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn test_wikipedia_simple_example() {
+        let content = fs::read_to_string("data/wikipedia_simple.qif").unwrap();
+        let result = parse(&content, "%m/%d/%y").unwrap();
+        assert!(content.len() > 0);
+        // QIF metadata
+        assert_eq!(result.file_type, "Bank");
+
+        // Items
+        assert_eq!(result.items.len(), 3);
+
+        // First items
+        let first = &result.items[0];
+        assert_eq!(first.date, "2010-03-03");
+        assert_eq!(first.amount, -379.0);
+        assert_eq!(first.category, "");
+        assert_eq!(first.payee, "CITY OF SPRINGFIELD");
+        assert_eq!(first.cleared_status, "");
+
+        // Second items
+        let second = &result.items[1];
+        assert_eq!(second.date, "2010-03-04");
+        assert_eq!(second.amount, -20.28);
+        assert_eq!(second.category, "");
+        assert_eq!(second.payee, "YOUR LOCAL SUPERMARKET");
+        assert_eq!(second.cleared_status, "");
+    }
+
     #[test]
     fn test_wikipedia_example() {
         let content = fs::read_to_string("data/wikipedia.qif").unwrap();
@@ -267,7 +307,7 @@ mod tests {
         assert_eq!(result.file_type, "Bank");
 
         // Items
-        assert_eq!(result.items.len(), 2);
+        assert_eq!(result.items.len(), 6);
 
         // First items
         let first = &result.items[0];
@@ -278,15 +318,33 @@ mod tests {
         assert_eq!(first.cleared_status, "");
 
         // Second items
-        let third = &result.items[1];
-        assert_eq!(third.date, "2018-08-27");
-        assert_eq!(third.amount, -10_000_000.0);
-        assert_eq!(third.category, "Shopping");
-        assert_eq!(third.payee, "Huge Amount 😅 with UTF8");
-        assert_eq!(third.address.len(), 3);
-        assert_eq!(third.address[0], "Address line 1");
-        assert_eq!(third.address[1], "Address line 2");
-        assert_eq!(third.address[2], "Address line 3");
+        let second = &result.items[1];
+        assert_eq!(second.date, "2018-08-27");
+        assert_eq!(second.amount, -10_000_000.0);
+        assert_eq!(second.category, "Shopping");
+        assert_eq!(second.payee, "Huge Amount 😅 with UTF8");
+        assert_eq!(second.address.len(), 3);
+        assert_eq!(second.address[0], "Address line 1");
+        assert_eq!(second.address[1], "Address line 2");
+        assert_eq!(second.address[2], "Address line 3");
+
+        // Item with + sign on amount
+        let third = &result.items[2];
+        assert_eq!(third.amount, 123.0);
+
+        // Item with missing leading 0 on date
+        let fourth = &result.items[3];
+        assert_eq!(fourth.date, "2018-08-28");
+
+        // Item with cheque number
+        let fifth = &result.items[4];
+        assert_eq!(fifth.number_of_the_check, "CHQ100");
+
+        // Item with cheque number on the splits
+        let sixth = &result.items[5];
+        assert_eq!(sixth.number_of_the_check, "");
+        assert_eq!(sixth.splits[0].number_of_the_check, "CHQ101");
+        assert_eq!(sixth.splits[1].number_of_the_check, "CHQ102");
     }
 
     #[test]
