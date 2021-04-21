@@ -1,0 +1,17 @@
+!Type:Invst
+D12/21' 7
+NBuy
+YIBM
+T11010.00
+I110.10
+Q100
+MPurchase of 100 shares of IBM stock on 21 December 2007 at $110.10 per share
+^
+D12/21' 8
+NSell
+YIBM
+T11010.00
+I110.10
+Q100
+MSell of 100 shares of IBM stock on 21 December 2007 at $110.10 per share
+^

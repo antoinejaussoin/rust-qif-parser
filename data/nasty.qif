@@ -11,3 +11,28 @@ AAddress line 1
 AAddress line 2
 AAddress line 3
 ^
+D28/08/2018
+T+123
+PPlus sign on Amount
+^
+D28/8/2018
+T0
+PMissing leading zero on date
+^
+D01/11/1982
+T1982.11
+NCHQ100
+PNumber of the cheque
+^
+D01/11/1982
+T1982.11
+PNumber of the cheque on a split this time
+SSplit 1
+E50%
+$-50.00
+NCHQ101
+SSplit 2
+E50%
+$-50.00
+NCHQ102
+^
