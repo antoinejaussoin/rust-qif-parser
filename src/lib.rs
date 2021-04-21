@@ -107,72 +107,67 @@ fn parse_line<'a>(
     item: &mut QifItem<'a>,
     date_format: &str,
 ) -> Result<(), errors::QifParsingError> {
-    if line.starts_with("T") || line.starts_with("U") {
-        item.amount = match parse_number(line) {
-            Err(err) => return Err(err),
-            Ok(amount) => amount,
-        };
-    }
-    if line.starts_with("P") {
-        item.payee = &line[1..];
-    }
-    if line.starts_with("L") {
-        item.category = &line[1..];
-    }
-    if line.starts_with("D") {
-        item.date = match date::parse_date(&line[1..], date_format) {
-            Err(err) => return Err(err),
-            Ok(date) => date,
-        };
-    }
-    if line.starts_with("C") {
-        item.cleared_status = &line[1..];
-    }
-    if line.starts_with("A") {
-        item.address.push(&line[1..]);
-    }
-    if line.starts_with("N") {
-        match item.splits.last_mut() {
-            None => item.number_of_the_check = &line[1..],
-            Some(item) => item.number_of_the_check = &line[1..],
-        };
-    }
+    match &line[..1] {
+        "T" | "U" => {
+            item.amount = match parse_number(line) {
+                Err(err) => return Err(err),
+                Ok(amount) => amount,
+            };
+        }
+        "P" => item.payee = &line[1..],
+        "L" => item.category = &line[1..],
+        "D" => {
+            item.date = match date::parse_date(&line[1..], date_format) {
+                Err(err) => return Err(err),
+                Ok(date) => date,
+            };
+        }
+        "C" => item.cleared_status = &line[1..],
+        "A" => item.address.push(&line[1..]),
+        "N" => {
+            match item.splits.last_mut() {
+                None => item.number_of_the_check = &line[1..],
+                Some(item) => item.number_of_the_check = &line[1..],
+            };
+        }
+        // Splits
+        "S" => {
+            let split = QifSplit {
+                category: &line[1..],
+                memo: "",
+                amount: 0.0,
+                number_of_the_check: "",
+            };
+            item.splits.push(split);
+        }
+        "E" => {
+            let split = match item.splits.last_mut() {
+                None => {
+                    return Err(errors::QifParsingError::new(
+                        "There should be a split item here",
+                    ))
+                }
+                Some(item) => item,
+            };
+            split.memo = &line[1..];
+        }
+        "$" => {
+            let split = match item.splits.last_mut() {
+                None => {
+                    return Err(errors::QifParsingError::new(
+                        "There should be a split item here",
+                    ))
+                }
+                Some(item) => item,
+            };
+            split.amount = match parse_number(line) {
+                Err(err) => return Err(err),
+                Ok(amount) => amount,
+            };
+        }
+        _ => {}
+    };
 
-    // Split
-    if line.starts_with("S") {
-        let split = QifSplit {
-            category: &line[1..],
-            memo: "",
-            amount: 0.0,
-            number_of_the_check: "",
-        };
-        item.splits.push(split);
-    }
-    if line.starts_with("E") {
-        let split = match item.splits.last_mut() {
-            None => {
-                return Err(errors::QifParsingError::new(
-                    "There should be a split item here",
-                ))
-            }
-            Some(item) => item,
-        };
-        split.memo = &line[1..];
-    }
-    if line.starts_with("$") {
-        let split = match item.splits.last_mut() {
-            None => {
-                return Err(errors::QifParsingError::new(
-                    "There should be a split item here",
-                ))
-            }
-            Some(item) => item,
-        };
-        split.amount = match parse_number(line) {
-            Err(err) => return Err(err),
-            Ok(amount) => amount,
-        };
-    }
     Ok(())
 }
 
