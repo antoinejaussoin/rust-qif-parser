@@ -1,9 +1,9 @@
 mod date;
-mod errors;
-mod investment;
-mod qif;
-mod split;
-mod transaction;
+pub mod errors;
+pub mod investment;
+pub mod qif;
+pub mod split;
+pub mod transaction;
 
 use investment::QifInvestment;
 use split::QifSplit;
