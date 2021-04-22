@@ -22,6 +22,11 @@ https://stevedonovan.github.io/rust-gentle-intro/6-error-handling.html
 
 ## Change Log
 
+### Version 0.2.0
+- Implementing useful traits, such as debug, format, clone, serialize and deserialize.
+- Adding Serde as a dependency (for the reason above)
+- Moving files around so it's cleaner and not all the code is in lib.rs
+
 ### Version 0.1.0
 - Make the code more Rusty (using match instead of if-statements)
 - Support for all the QIF fields as defined in the Wikipedia entry
