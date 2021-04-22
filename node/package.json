@@ -1,0 +1,15 @@
+{
+  "name": "node_qif_benchmark",
+  "private": "true",
+  "version": "1.0.0",
+  "description": "A benchmark of QIF parsing, in Node",
+  "main": "index.js",
+  "scripts": {
+    "run": "node index.js"
+  },
+  "author": "Antoine Jaussoin",
+  "license": "MIT",
+  "dependencies": {
+    "qif2json": "^0.4.0"
+  }
+}
