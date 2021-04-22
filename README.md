@@ -26,6 +26,7 @@ https://stevedonovan.github.io/rust-gentle-intro/6-error-handling.html
 - Implementing useful traits, such as debug, format, clone, serialize and deserialize.
 - Adding Serde as a dependency (for the reason above)
 - Moving files around so it's cleaner and not all the code is in lib.rs
+- BREAKING CHANGE: the Qif object is now returning a "transactions" vec, not "items".
 
 ### Version 0.1.0
 - Make the code more Rusty (using match instead of if-statements)
