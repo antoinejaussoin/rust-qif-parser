@@ -1,80 +1,13 @@
 mod date;
 mod errors;
+mod investment;
+mod qif;
+mod split;
+mod transaction;
 
-/// Represents a QIF file
-/// It has a file_type (Bank, etc.) and a collection of items
-pub struct Qif<'a> {
-    /// File type can be one of: Cash, Bank, CCard, Invst, Oth A, Oth L, Invoice
-    pub file_type: &'a str,
-    pub items: Vec<QifItem<'a>>,
-    pub investments: Vec<QifInvestment<'a>>,
-}
-
-/// Represents a transaction
-/// It has a date and an amount, and possibly some splits
-pub struct QifItem<'a> {
-    /// Parsed date, with format YYYY-MM-DD
-    pub date: String,
-    pub amount: f64,
-    pub memo: &'a str,
-    pub payee: &'a str,
-    pub category: &'a str,
-    pub cleared_status: &'a str,
-    pub address: Vec<&'a str>,
-    pub splits: Vec<QifSplit<'a>>,
-    pub number_of_the_check: &'a str,
-}
-
-/// Represents a Split, which is basically a portion of a transaction
-pub struct QifSplit<'a> {
-    pub category: &'a str,
-    pub memo: &'a str,
-    pub amount: f64,
-    pub number_of_the_check: &'a str,
-}
-
-/// Represents an Investment
-pub struct QifInvestment<'a> {
-    pub date: String,
-    pub amount: f64,
-    pub memo: &'a str,
-    pub cleared_status: &'a str,
-    pub action: &'a str,
-    pub security_name: &'a str,
-    pub price: f64,
-    pub quantity: f64,
-    pub commission_cost: f64,
-    pub amount_transferred: f64,
-}
-
-fn empty_item<'a>() -> QifItem<'a> {
-    QifItem {
-        date: "".to_string(),
-        amount: 0.0,
-        memo: "",
-        payee: "",
-        category: "",
-        cleared_status: "",
-        splits: Vec::new(),
-        address: Vec::new(),
-        number_of_the_check: "",
-    }
-}
-
-fn empty_investment<'a>() -> QifInvestment<'a> {
-    QifInvestment {
-        date: "".to_string(),
-        amount: 0.0,
-        cleared_status: "",
-        memo: "",
-        action: "",
-        amount_transferred: 0.0,
-        commission_cost: 0.0,
-        price: 0.0,
-        quantity: 0.0,
-        security_name: "",
-    }
-}
+use investment::QifInvestment;
+use split::QifSplit;
+use transaction::QifTransaction;
 
 /// This is the parsing function. It takes the text content of your QIF file as an argument,
 /// and the date format.
@@ -93,16 +26,16 @@ fn empty_investment<'a>() -> QifInvestment<'a> {
 pub fn parse<'a>(
     qif_content: &'a str,
     date_format: &str,
-) -> Result<Qif<'a>, errors::QifParsingError> {
-    let mut results: Vec<QifItem> = Vec::new();
+) -> Result<qif::Qif<'a>, errors::QifParsingError> {
+    let mut results: Vec<QifTransaction> = Vec::new();
     let mut investments: Vec<QifInvestment> = Vec::new();
-    let mut result = Qif {
+    let mut result = qif::Qif {
         file_type: "",
         items: Vec::new(),
         investments: Vec::new(),
     };
-    let mut current_item = empty_item();
-    let mut current_investment = empty_investment();
+    let mut current_item = QifTransaction::default();
+    let mut current_investment = QifInvestment::default();
     let mut is_investment = false;
     let lines: Vec<&str> = qif_content.lines().collect();
 
@@ -119,8 +52,8 @@ pub fn parse<'a>(
             } else {
                 results.push(current_item);
             }
-            current_item = empty_item();
-            current_investment = empty_investment();
+            current_item = QifTransaction::default();
+            current_investment = QifInvestment::default();
         }
         if is_investment {
             match parse_investment(line, &mut current_investment, date_format) {
@@ -197,7 +130,7 @@ fn parse_investment<'a>(
 
 fn parse_line<'a>(
     line: &'a str,
-    item: &mut QifItem<'a>,
+    item: &mut QifTransaction<'a>,
     date_format: &str,
 ) -> Result<(), errors::QifParsingError> {
     match &line[..1] {

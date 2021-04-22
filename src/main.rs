@@ -10,5 +10,9 @@ fn main() {
         println!("{} {} {}", item.date, item.amount, item.payee);
     }
     let sum: f64 = parsed.items.iter().map(|item| item.amount).sum();
+    println!("Format: {}", parsed);
     println!("Account balance: {}", sum);
+    println!("To JSON: ");
+    let json = serde_json::to_string(&parsed).unwrap();
+    println!("{}", json);
 }
