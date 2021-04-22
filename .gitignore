@@ -13,3 +13,6 @@
 
 /target
 /data/perso*
+
+# Node
+node_modules

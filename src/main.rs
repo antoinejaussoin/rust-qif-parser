@@ -1,18 +1,38 @@
 use ::qif_parser::parse;
-use std::fs;
+use std::time::Instant;
 
 fn main() {
-    println!("QIF Parser Example");
-    let content = fs::read_to_string("data/cic.qif").unwrap();
-    let parsed = parse(&content, "%d/%m/%y").unwrap();
-    println!("Type: {}", parsed.file_type);
-    for item in &parsed.transactions {
-        println!("{} {} {}", item.date, item.amount, item.payee);
+    let item = "D02/10/2020
+C*
+Mtest order 1
+T-100.00
+PAmazon.com
+LFood:Groceries
+SFood:Groceries
+E50%
+$-50.00
+STransportation:Automobile
+E25%
+$-25.00
+SPersonal Care:Haircare
+E10%
+$-10.00
+SHealthcare:Prescriptions
+E15%
+$-15.00
+^
+";
+    let size = 100_000;
+    let mut full = String::with_capacity(item.len() * size);
+    for _ in 0..100_000 {
+        full.push_str(item);
     }
-    let sum: f64 = parsed.transactions.iter().map(|item| item.amount).sum();
-    println!("Format: {}", parsed);
-    println!("Account balance: {}", sum);
-    println!("To JSON: ");
-    let json = serde_json::to_string(&parsed).unwrap();
-    println!("{}", json);
+    let before = Instant::now();
+    let parsed = parse(&full, "%d/%m/%Y").unwrap();
+    let elapsed = before.elapsed();
+    println!(
+        "RUST: Done processing {} items. Time it would take to process 1M items: {}ms",
+        parsed.transactions.len(),
+        elapsed.as_millis() * 10
+    );
 }
