@@ -6,10 +6,10 @@ fn main() {
     let content = fs::read_to_string("data/cic.qif").unwrap();
     let parsed = parse(&content, "%d/%m/%y").unwrap();
     println!("Type: {}", parsed.file_type);
-    for item in &parsed.items {
+    for item in &parsed.transactions {
         println!("{} {} {}", item.date, item.amount, item.payee);
     }
-    let sum: f64 = parsed.items.iter().map(|item| item.amount).sum();
+    let sum: f64 = parsed.transactions.iter().map(|item| item.amount).sum();
     println!("Format: {}", parsed);
     println!("Account balance: {}", sum);
     println!("To JSON: ");

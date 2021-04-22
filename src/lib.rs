@@ -31,7 +31,7 @@ pub fn parse<'a>(
     let mut investments: Vec<QifInvestment> = Vec::new();
     let mut result = qif::Qif {
         file_type: "",
-        items: Vec::new(),
+        transactions: Vec::new(),
         investments: Vec::new(),
     };
     let mut current_item = QifTransaction::default();
@@ -68,7 +68,7 @@ pub fn parse<'a>(
         }
     }
 
-    result.items = results;
+    result.transactions = results;
     result.investments = investments;
 
     Ok(result)

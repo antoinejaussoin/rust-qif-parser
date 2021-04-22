@@ -9,11 +9,11 @@ fn test_wikipedia_simple_example() {
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
 
-    // Items
-    assert_eq!(result.items.len(), 3);
+    // Transactions
+    assert_eq!(result.transactions.len(), 3);
 
     // First items
-    let first = &result.items[0];
+    let first = &result.transactions[0];
     assert_eq!(first.date, "2010-03-03");
     assert_eq!(first.amount, -379.0);
     assert_eq!(first.category, "");
@@ -21,7 +21,7 @@ fn test_wikipedia_simple_example() {
     assert_eq!(first.cleared_status, "");
 
     // Second items
-    let second = &result.items[1];
+    let second = &result.transactions[1];
     assert_eq!(second.date, "2010-03-04");
     assert_eq!(second.amount, -20.28);
     assert_eq!(second.category, "");
@@ -39,7 +39,7 @@ fn test_wikipedia_investment_example() {
     assert_eq!(result.file_type, "Invst");
 
     // Counting items
-    assert_eq!(result.items.len(), 0);
+    assert_eq!(result.transactions.len(), 0);
     assert_eq!(result.investments.len(), 2);
 
     // First items
@@ -65,10 +65,10 @@ fn test_wikipedia_example() {
     assert_eq!(result.file_type, "Bank");
 
     // Items
-    assert_eq!(result.items.len(), 6);
+    assert_eq!(result.transactions.len(), 6);
 
     // First items
-    let first = &result.items[0];
+    let first = &result.transactions[0];
     assert_eq!(first.date, "2020-02-10");
     assert_eq!(first.amount, 0.0);
     assert_eq!(first.category, "[TestExport]");
@@ -76,7 +76,7 @@ fn test_wikipedia_example() {
     assert_eq!(first.cleared_status, "X");
 
     // Second item (splits)
-    let second = &result.items[1];
+    let second = &result.transactions[1];
     assert_eq!(second.splits.len(), 2);
     assert_eq!(second.splits[0].category, "Bills:Cell Phone");
     assert_eq!(second.splits[0].memo, "sign up credit");
@@ -86,7 +86,7 @@ fn test_wikipedia_example() {
     assert_eq!(second.splits[1].amount, 82.50);
 
     // Third item (memo)
-    let third = &result.items[2];
+    let third = &result.transactions[2];
     assert_eq!(third.memo, "money back for damaged parcel");
     assert_eq!(third.category, "Miscellaneous");
 }
@@ -101,10 +101,10 @@ fn test_monzo_example() {
     assert_eq!(result.file_type, "Bank");
 
     // Items
-    assert_eq!(result.items.len(), 13);
+    assert_eq!(result.transactions.len(), 13);
 
     // First items
-    let first = &result.items[0];
+    let first = &result.transactions[0];
     assert_eq!(first.date, "2018-08-27");
     assert_eq!(first.amount, 1000.0);
     assert_eq!(first.category, "");
@@ -112,7 +112,7 @@ fn test_monzo_example() {
     assert_eq!(first.cleared_status, "");
 
     // Third items
-    let third = &result.items[2];
+    let third = &result.transactions[2];
     assert_eq!(third.date, "2018-08-28");
     assert_eq!(third.amount, -15.0);
     assert_eq!(third.category, "Transport");
@@ -130,10 +130,10 @@ fn test_cic_example() {
     assert_eq!(result.file_type, "Bank");
 
     // Items
-    assert_eq!(result.items.len(), 12);
+    assert_eq!(result.transactions.len(), 12);
 
     // First items
-    let first = &result.items[0];
+    let first = &result.transactions[0];
     assert_eq!(first.date, "2020-05-19");
     assert_eq!(first.amount, 500.0);
     assert_eq!(first.category, "");
@@ -141,7 +141,7 @@ fn test_cic_example() {
     assert_eq!(first.cleared_status, "");
 
     // Third items
-    let third = &result.items[2];
+    let third = &result.transactions[2];
     assert_eq!(third.date, "2020-06-02");
     assert_eq!(third.amount, -9.59);
     assert_eq!(third.category, "");
@@ -159,10 +159,10 @@ fn test_nasty_example() {
     assert_eq!(result.file_type, "Bank");
 
     // Items
-    assert_eq!(result.items.len(), 6);
+    assert_eq!(result.transactions.len(), 6);
 
     // First items
-    let first = &result.items[0];
+    let first = &result.transactions[0];
     assert_eq!(first.date, "2018-08-27");
     assert_eq!(first.amount, 10_000.0);
     assert_eq!(first.category, "");
@@ -170,7 +170,7 @@ fn test_nasty_example() {
     assert_eq!(first.cleared_status, "");
 
     // Second items
-    let second = &result.items[1];
+    let second = &result.transactions[1];
     assert_eq!(second.date, "2018-08-27");
     assert_eq!(second.amount, -10_000_000.0);
     assert_eq!(second.category, "Shopping");
@@ -181,19 +181,19 @@ fn test_nasty_example() {
     assert_eq!(second.address[2], "Address line 3");
 
     // Item with + sign on amount
-    let third = &result.items[2];
+    let third = &result.transactions[2];
     assert_eq!(third.amount, 123.0);
 
     // Item with missing leading 0 on date
-    let fourth = &result.items[3];
+    let fourth = &result.transactions[3];
     assert_eq!(fourth.date, "2018-08-28");
 
     // Item with cheque number
-    let fifth = &result.items[4];
+    let fifth = &result.transactions[4];
     assert_eq!(fifth.number_of_the_check, "CHQ100");
 
     // Item with cheque number on the splits
-    let sixth = &result.items[5];
+    let sixth = &result.transactions[5];
     assert_eq!(sixth.number_of_the_check, "");
     assert_eq!(sixth.splits[0].number_of_the_check, "CHQ101");
     assert_eq!(sixth.splits[1].number_of_the_check, "CHQ102");

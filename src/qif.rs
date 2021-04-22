@@ -9,7 +9,7 @@ use std::fmt;
 pub struct Qif<'a> {
     /// File type can be one of: Cash, Bank, CCard, Invst, Oth A, Oth L, Invoice
     pub file_type: &'a str,
-    pub items: Vec<QifTransaction<'a>>,
+    pub transactions: Vec<QifTransaction<'a>>,
     pub investments: Vec<QifInvestment<'a>>,
 }
 
@@ -19,7 +19,7 @@ impl<'a> fmt::Display for Qif<'a> {
             f,
             "{}, {} transactions, {} investments",
             self.file_type,
-            self.items.len(),
+            self.transactions.len(),
             self.investments.len()
         )
     }
