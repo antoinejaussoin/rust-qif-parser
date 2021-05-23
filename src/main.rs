@@ -1,5 +1,5 @@
 use ::qif_parser::parse;
-use std::time::Instant;
+use std::{convert::TryInto, time::Instant};
 
 fn main() {
     let item = "D02/10/2020
@@ -22,17 +22,20 @@ E15%
 $-15.00
 ^
 ";
-    let size = 100_000;
+    let size = 10_000;
+    let total: usize = 1_000_000;
+    let ratio = total / size;
     let mut full = String::with_capacity(item.len() * size);
-    for _ in 0..100_000 {
+    for _ in 0..size {
         full.push_str(item);
     }
     let before = Instant::now();
     let parsed = parse(&full, "%d/%m/%Y").unwrap();
     let elapsed = before.elapsed();
+    let millis: usize = elapsed.as_millis().try_into().unwrap();
     println!(
         "RUST: Done processing {} items. Time it would take to process 1M items: {}ms",
         parsed.transactions.len(),
-        elapsed.as_millis() * 10
+        millis * ratio
     );
 }
