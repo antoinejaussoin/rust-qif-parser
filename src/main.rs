@@ -22,9 +22,9 @@ E15%
 $-15.00
 ^
 ";
-    let size = 100_000;
+    let size = 10_000;
     let mut full = String::with_capacity(item.len() * size);
-    for _ in 0..100_000 {
+    for _ in 0..10_000 {
         full.push_str(item);
     }
     let before = Instant::now();
@@ -33,6 +33,6 @@ $-15.00
     println!(
         "RUST: Done processing {} items. Time it would take to process 1M items: {}ms",
         parsed.transactions.len(),
-        elapsed.as_millis() * 10
+        elapsed.as_millis() * 100
     );
 }
