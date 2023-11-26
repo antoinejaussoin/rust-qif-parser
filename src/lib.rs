@@ -40,6 +40,9 @@ pub fn parse<'a>(
     let lines: Vec<&str> = qif_content.lines().collect();
 
     for line in lines {
+        if line == "" {
+            continue;
+        }
         if line.starts_with("!Type:Invst") {
             is_investment = true;
         }

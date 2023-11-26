@@ -37,6 +37,10 @@ https://stevedonovan.github.io/rust-gentle-intro/6-error-handling.html
 
 ## Change Log
 
+### Version 0.3.0
+
+- Adding support for Amex QIF files, which include blank lines
+
 ### Version 0.2.0
 - Implementing useful traits, such as debug, format, clone, serialize and deserialize.
 - Adding Serde as a dependency (for the reason above)
