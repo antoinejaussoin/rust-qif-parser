@@ -37,6 +37,10 @@ https://stevedonovan.github.io/rust-gentle-intro/6-error-handling.html
 
 ## Change Log
 
+### Version 0.4.0
+
+- Upgrade dependencies
+
 ### Version 0.3.0
 
 - Adding support for Amex QIF files, which include blank lines
