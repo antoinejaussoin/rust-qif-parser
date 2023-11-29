@@ -210,3 +210,33 @@ fn test_errors() {
         Ok(_) => panic!("It should have failed"),
     };
 }
+
+#[test]
+fn test_american_express() {
+    let content = fs::read_to_string("data/amex.qif").unwrap();
+    let result = parse(&content, "%d/%m/%Y").unwrap();
+    assert!(content.len() > 0);
+
+    // QIF metadata
+    assert_eq!(result.file_type, "CCard");
+
+    // Items
+    assert_eq!(result.transactions.len(), 7);
+
+    // First items
+    let first = &result.transactions[0];
+    assert_eq!(first.date, "2023-11-25");
+    assert_eq!(first.amount, 150.94);
+    assert_eq!(first.category, "");
+    assert_eq!(first.payee, "PAYMENT RECEIVED - THANK YOU");
+    assert_eq!(first.cleared_status, "");
+
+    // Third items
+    let third = &result.transactions[1];
+    assert_eq!(third.date, "2023-11-24");
+    assert_eq!(third.amount, -20.58);
+    assert_eq!(third.category, "");
+    assert_eq!(third.payee, "FOO     BAR");
+    assert_eq!(third.memo, "Foreign Spend Amount: 24.99 UNITED STATES DOLLAR Commission Amount: 0.60 Currency Exchange Rate: 1.2507");
+
+}

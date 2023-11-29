@@ -1,7 +1,7 @@
 const qif2json = require("qif2json");
 const { performance } = require('perf_hooks');
 
-const count = 1000;
+const count = 10000;
 
 const content = "!Type:Bank" + `D02/10/2020
 C*
