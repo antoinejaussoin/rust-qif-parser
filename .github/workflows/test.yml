@@ -7,6 +7,34 @@ permissions:
   contents: read
 
 jobs:
+  version:
+    name: version bumped
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Require a newer crate version
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          base=$(git show "FETCH_HEAD:Cargo.toml" | awk -F '"' '/^version = / { print $2; exit }')
+          head=$(awk -F '"' '/^version = / { print $2; exit }' Cargo.toml)
+          if [ -z "$base" ] || [ -z "$head" ]; then
+            echo "Could not read the crate version from Cargo.toml"
+            exit 1
+          fi
+          if [ "$base" = "$head" ]; then
+            echo "Crate version is still $head. Bump the version in Cargo.toml before merging."
+            exit 1
+          fi
+          newest=$(printf '%s\n%s\n' "$base" "$head" | sort -V | tail -n 1)
+          if [ "$newest" != "$head" ]; then
+            echo "Crate version $head is older than $base on $BASE_REF."
+            exit 1
+          fi
+          echo "Version updated: $base -> $head"
+
   test:
     name: cargo test
     runs-on: ubuntu-latest
