@@ -14,7 +14,7 @@ use transaction::QifTransaction;
 ///
 /// Indeed, the date in a QIF file doesn't have a pre-determined format, which means you could
 /// receive QIF files with completely different formats.
-/// Please use, for the date_format, the format you would use with Chrono (https://docs.rs/chrono/0.4.13/chrono/format/strftime/index.html#specifiers)
+/// Please use, for the date_format, the format you would use with Chrono (https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers)
 ///
 /// Some examples: (all for November 1st, 1982)
 /// 01/11/1982 -> %d/%m/%Y
@@ -40,7 +40,7 @@ pub fn parse<'a>(
     let lines: Vec<&str> = qif_content.lines().collect();
 
     for line in lines {
-        if line == "" {
+        if line.is_empty() {
             continue;
         }
         if line.starts_with("!Type:Invst") {
@@ -59,15 +59,9 @@ pub fn parse<'a>(
             current_investment = QifInvestment::default();
         }
         if is_investment {
-            match parse_investment(line, &mut current_investment, date_format) {
-                Err(err) => return Err(err),
-                Ok(()) => (),
-            }
+            parse_investment(line, &mut current_investment, date_format)?;
         } else {
-            match parse_line(line, &mut current_item, date_format) {
-                Err(err) => return Err(err),
-                Ok(()) => (),
-            }
+            parse_line(line, &mut current_item, date_format)?;
         }
     }
 
@@ -97,32 +91,20 @@ fn parse_investment<'a>(
 ) -> Result<(), errors::QifParsingError> {
     match &line[..1] {
         "T" | "U" => {
-            item.amount = match parse_number(line) {
-                Err(err) => return Err(err),
-                Ok(amount) => amount,
-            };
+            item.amount = parse_number(line)?;
         }
         "D" => {
-            item.date = match date::parse_date(&line[1..], date_format) {
-                Err(err) => return Err(err),
-                Ok(date) => date,
-            };
+            item.date = date::parse_date(&line[1..], date_format)?;
         }
         "C" => item.cleared_status = &line[1..],
         "M" => item.memo = &line[1..],
         "N" => item.action = &line[1..],
         "Y" => item.security_name = &line[1..],
         "I" => {
-            item.price = match parse_number(line) {
-                Err(err) => return Err(err),
-                Ok(amount) => amount,
-            };
+            item.price = parse_number(line)?;
         }
         "Q" => {
-            item.quantity = match parse_number(line) {
-                Err(err) => return Err(err),
-                Ok(amount) => amount,
-            };
+            item.quantity = parse_number(line)?;
         }
 
         _ => {}
@@ -138,18 +120,12 @@ fn parse_line<'a>(
 ) -> Result<(), errors::QifParsingError> {
     match &line[..1] {
         "T" | "U" => {
-            item.amount = match parse_number(line) {
-                Err(err) => return Err(err),
-                Ok(amount) => amount,
-            };
+            item.amount = parse_number(line)?;
         }
         "P" => item.payee = &line[1..],
         "L" => item.category = &line[1..],
         "D" => {
-            item.date = match date::parse_date(&line[1..], date_format) {
-                Err(err) => return Err(err),
-                Ok(date) => date,
-            };
+            item.date = date::parse_date(&line[1..], date_format)?;
         }
         "C" => item.cleared_status = &line[1..],
         "M" => item.memo = &line[1..],
@@ -175,7 +151,7 @@ fn parse_line<'a>(
                 None => {
                     return Err(errors::QifParsingError::new(
                         "There should be a split item here",
-                    ))
+                    ));
                 }
                 Some(item) => item,
             };
@@ -186,14 +162,11 @@ fn parse_line<'a>(
                 None => {
                     return Err(errors::QifParsingError::new(
                         "There should be a split item here",
-                    ))
+                    ));
                 }
                 Some(item) => item,
             };
-            split.amount = match parse_number(line) {
-                Err(err) => return Err(err),
-                Ok(amount) => amount,
-            };
+            split.amount = parse_number(line)?;
         }
         _ => {}
     };

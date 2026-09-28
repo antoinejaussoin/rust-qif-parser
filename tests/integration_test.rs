@@ -5,7 +5,7 @@ use std::fs;
 fn test_wikipedia_simple_example() {
     let content = fs::read_to_string("data/wikipedia_simple.qif").unwrap();
     let result = parse(&content, "%m/%d/%y").unwrap();
-    assert!(content.len() > 0);
+    assert!(!content.is_empty());
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
 
@@ -33,7 +33,7 @@ fn test_wikipedia_simple_example() {
 fn test_wikipedia_investment_example() {
     let content = fs::read_to_string("data/wikipedia_investments.qif").unwrap();
     let result = parse(&content, "%m/%d'%y").unwrap();
-    assert!(content.len() > 0);
+    assert!(!content.is_empty());
 
     // QIF metadata
     assert_eq!(result.file_type, "Invst");
@@ -60,7 +60,7 @@ fn test_wikipedia_investment_example() {
 fn test_wikipedia_example() {
     let content = fs::read_to_string("data/wikipedia.qif").unwrap();
     let result = parse(&content, "%m/%d'%Y").unwrap();
-    assert!(content.len() > 0);
+    assert!(!content.is_empty());
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
 
@@ -95,7 +95,7 @@ fn test_wikipedia_example() {
 fn test_monzo_example() {
     let content = fs::read_to_string("data/monzo.qif").unwrap();
     let result = parse(&content, "%d/%m/%Y").unwrap();
-    assert!(content.len() > 0);
+    assert!(!content.is_empty());
 
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
@@ -124,7 +124,7 @@ fn test_monzo_example() {
 fn test_cic_example() {
     let content = fs::read_to_string("data/cic.qif").unwrap();
     let result = parse(&content, "%d/%m/%y").unwrap();
-    assert!(content.len() > 0);
+    assert!(!content.is_empty());
 
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
@@ -153,7 +153,7 @@ fn test_cic_example() {
 fn test_nasty_example() {
     let content = fs::read_to_string("data/nasty.qif").unwrap();
     let result = parse(&content, "%d/%m/%Y").unwrap();
-    assert!(content.len() > 0);
+    assert!(!content.is_empty());
 
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
@@ -215,7 +215,7 @@ fn test_errors() {
 fn test_american_express() {
     let content = fs::read_to_string("data/amex.qif").unwrap();
     let result = parse(&content, "%d/%m/%Y").unwrap();
-    assert!(content.len() > 0);
+    assert!(!content.is_empty());
 
     // QIF metadata
     assert_eq!(result.file_type, "CCard");
@@ -237,6 +237,8 @@ fn test_american_express() {
     assert_eq!(third.amount, -20.58);
     assert_eq!(third.category, "");
     assert_eq!(third.payee, "FOO     BAR");
-    assert_eq!(third.memo, "Foreign Spend Amount: 24.99 UNITED STATES DOLLAR Commission Amount: 0.60 Currency Exchange Rate: 1.2507");
-
+    assert_eq!(
+        third.memo,
+        "Foreign Spend Amount: 24.99 UNITED STATES DOLLAR Commission Amount: 0.60 Currency Exchange Rate: 1.2507"
+    );
 }

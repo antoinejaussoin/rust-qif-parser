@@ -37,6 +37,11 @@ https://stevedonovan.github.io/rust-gentle-intro/6-error-handling.html
 
 ## Change Log
 
+### Version 0.5.0
+
+- Migrate to the Rust 2024 edition (Rust 1.98 or newer)
+- Upgrade dependencies (chrono, serde, criterion)
+
 ### Version 0.4.0
 
 - Upgrade dependencies
