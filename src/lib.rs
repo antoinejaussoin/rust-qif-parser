@@ -8,4 +8,4 @@ pub mod records;
 pub mod split;
 pub mod transaction;
 
-pub use parse::parse;
+pub use parse::{DateFormat, parse};

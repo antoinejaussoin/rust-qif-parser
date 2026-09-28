@@ -16,10 +16,17 @@ fn read(path: &str) -> String {
     fs::read_to_string(path).unwrap_or_else(|err| panic!("failed to read {path}: {err}"))
 }
 
+fn parse_both<'a>(content: &'a str, date_format: &str) -> qif_parser::qif::Qif<'a> {
+    let explicit = parse(content, date_format).unwrap();
+    let automatic = parse(content, None).unwrap();
+    assert_eq!(explicit, automatic);
+    explicit
+}
+
 #[test]
 fn gnucash_mutual_fund_sample() {
     let content = read("data/gnucash_investments.qif");
-    let result = parse(&content, "%m/%d/%Y").unwrap();
+    let result = parse_both(&content, "%m/%d/%Y");
 
     assert_eq!(result.file_type, "Invst");
     assert!(result.transactions.is_empty());
@@ -51,7 +58,7 @@ fn gnucash_mutual_fund_sample() {
 #[test]
 fn intuit_investment_sample_from_the_qif_gem() {
     let content = read("data/external/quicken_investment_account.qif");
-    let result = parse(&content, "%m/%d/%y").unwrap();
+    let result = parse_both(&content, "%m/%d/%y");
 
     assert_eq!(result.file_type, "Invst");
     assert!(result.transactions.is_empty());
@@ -86,7 +93,7 @@ fn intuit_bank_sample_from_the_qif_gem() {
     // D6/1/94 is ambiguous. The Intuit commentary around this sample is a US date,
     // so the caller passes month/day. Day/month would also parse, as 6 January.
     let content = read("data/external/quicken_non_investment_account.qif");
-    let result = parse(&content, "%m/%d/%y").unwrap();
+    let result = parse_both(&content, "%m/%d/%y");
 
     assert_eq!(result.file_type, "Bank");
     assert_eq!(result.transactions.len(), 3);
@@ -128,7 +135,7 @@ fn intuit_bank_sample_from_the_qif_gem() {
 #[test]
 fn qif_gem_splits_include_a_split_written_before_the_amount() {
     let content = read("data/external/splits.qif");
-    let result = parse(&content, "%m/%d/%y").unwrap();
+    let result = parse_both(&content, "%m/%d/%y");
     assert_eq!(result.transactions.len(), 2);
 
     let first = &result.transactions[0];
@@ -151,7 +158,7 @@ fn qif_gem_splits_include_a_split_written_before_the_amount() {
 #[test]
 fn qif_gem_space_padded_dates_and_unpadded_days() {
     let spaced_file = read("data/external/3_records_spaced.qif");
-    let spaced = parse(&spaced_file, "%m/%d/%y").unwrap();
+    let spaced = parse_both(&spaced_file, "%m/%d/%y");
     assert_eq!(spaced.transactions.len(), 3);
     assert_eq!(spaced.transactions[0].date, "2010-01-01");
     assert_eq!(spaced.transactions[0].amount, -10.0);
@@ -165,7 +172,7 @@ fn qif_gem_space_padded_dates_and_unpadded_days() {
     assert_eq!(spaced.transactions[2].memo, "Reference");
 
     let unpadded_file = read("data/external/3_records_dmyy.qif");
-    let unpadded = parse(&unpadded_file, "%d/%m/%y").unwrap();
+    let unpadded = parse_both(&unpadded_file, "%d/%m/%y");
     assert_eq!(unpadded.transactions[0].date, "2010-01-01");
     assert_eq!(unpadded.transactions[1].date, "2010-06-01");
     assert_eq!(unpadded.transactions[2].date, "2010-12-29");
@@ -175,7 +182,7 @@ fn qif_gem_space_padded_dates_and_unpadded_days() {
 #[test]
 fn qif_gem_amounts_with_thousands_commas() {
     let content = read("data/external/3_records_separator.qif");
-    let result = parse(&content, "%d/%m/%Y").unwrap();
+    let result = parse_both(&content, "%d/%m/%Y");
     let amounts: Vec<f64> = result.transactions.iter().map(|txn| txn.amount).collect();
     assert_eq!(amounts, vec![-1_010.0, -30_020.0, 30.0]);
     assert_eq!(result.transactions[0].date, "2010-01-01");
@@ -185,7 +192,7 @@ fn qif_gem_amounts_with_thousands_commas() {
 #[test]
 fn a_caret_immediately_after_the_header_is_not_a_transaction() {
     let content = read("data/external/3_records_invalid_header.qif");
-    let result = parse(&content, "%d/%m/%y").unwrap();
+    let result = parse_both(&content, "%d/%m/%y");
     assert_eq!(result.transactions.len(), 3);
     assert_eq!(result.transactions[0].date, "2010-01-01");
     assert_eq!(result.transactions[0].amount, -10.0);
@@ -212,7 +219,7 @@ Q100
 MPurchase of 100 shares of IBM stock on 21 December 2007 at $110.10 per share
 ^
 ";
-    let result = parse(content, "%m/%d'%y").unwrap();
+    let result = parse_both(content, "%m/%d'%y");
     assert_eq!(result.file_type, "Invst");
     assert!(result.transactions.is_empty());
     assert_eq!(result.accounts.len(), 1);
@@ -231,7 +238,7 @@ MPurchase of 100 shares of IBM stock on 21 December 2007 at $110.10 per share
 #[test]
 fn security_price_lines_from_the_qif_specification() {
     let content = read("data/prices.qif");
-    let result = parse(&content, "%m/%d/%y").unwrap();
+    let result = parse_both(&content, "%m/%d/%y");
     assert_eq!(result.file_type, "Prices");
     assert!(result.transactions.is_empty());
     assert!(result.investments.is_empty());
@@ -261,7 +268,7 @@ fn security_price_lines_from_the_qif_specification() {
 #[test]
 fn category_class_tag_security_and_budget_lists() {
     let content = read("data/lists.qif");
-    let result = parse(&content, "%m/%d/%Y").unwrap();
+    let result = parse_both(&content, "%m/%d/%Y");
     assert_eq!(result.file_type, "Budget");
     assert!(result.transactions.is_empty());
 
@@ -321,7 +328,7 @@ fn category_class_tag_security_and_budget_lists() {
 #[test]
 fn quicken_autoswitch_export_keeps_each_register_with_its_account() {
     let content = read("data/autoswitch.qif");
-    let result = parse(&content, "%m/%d/%Y").unwrap();
+    let result = parse_both(&content, "%m/%d/%Y");
 
     assert_eq!(result.options, vec!["AutoSwitch", "AllXfr"]);
     assert_eq!(result.file_type, "Bank");

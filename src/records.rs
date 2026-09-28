@@ -108,7 +108,7 @@ impl fmt::Display for QifPrice<'_> {
 /// `kind` is the letter from the `K` line: `C` check, `D` deposit, `P` payment,
 /// `I` investment, `E` electronic payee. Investment memorized items (`KI`) fill
 /// `investment`; every other kind fills `transaction`.
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QifMemorized<'a> {
     pub kind: &'a str,
     pub transaction: QifTransaction<'a>,

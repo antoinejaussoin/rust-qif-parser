@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Represents a Split, which is basically a portion of a transaction
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QifSplit<'a> {
     pub category: &'a str,
     pub memo: &'a str,

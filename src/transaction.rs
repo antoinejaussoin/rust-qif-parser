@@ -49,7 +49,7 @@ pub struct QifInvoice<'a> {
 
 /// Represents a transaction
 /// It has a date and an amount, and possibly some splits
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QifTransaction<'a> {
     /// Parsed date, with format YYYY-MM-DD
     pub date: String,

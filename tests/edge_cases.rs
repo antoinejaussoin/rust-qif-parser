@@ -1,7 +1,12 @@
 use qif_parser::parse;
 
 fn parse_ok<'a>(content: &'a str, date_format: &str) -> qif_parser::qif::Qif<'a> {
-    parse(content, date_format).unwrap_or_else(|err| panic!("parse failed: {}", err.details))
+    let explicit =
+        parse(content, date_format).unwrap_or_else(|err| panic!("parse failed: {}", err.details));
+    let automatic = parse(content, None)
+        .unwrap_or_else(|err| panic!("automatic date format failed: {}", err.details));
+    assert_eq!(explicit, automatic);
+    explicit
 }
 
 #[test]
@@ -43,7 +48,7 @@ fn a_new_header_closes_the_record_that_was_still_open() {
     let result = parse_ok(
         "\
 !Type:Bank
-D1/1/2020
+D31/1/2020
 T5
 POne
 !Type:Cash
@@ -57,7 +62,7 @@ PTwo
     assert_eq!(result.file_type, "Cash");
     assert_eq!(result.transactions.len(), 2);
     assert_eq!(result.transactions[0].payee, "One");
-    assert_eq!(result.transactions[0].date, "2020-01-01");
+    assert_eq!(result.transactions[0].date, "2020-01-31");
     assert_eq!(result.transactions[1].payee, "Two");
     assert_eq!(result.transactions[1].date, "2020-01-02");
 }
@@ -450,6 +455,14 @@ fn a_bad_amount_or_date_fails_the_whole_file() {
     assert_eq!(
         date.details,
         "Error when parsing date: input is out of range 27/08/2018"
+    );
+    let guessed = parse("!Type:Bank\nD27/08/2018\nT1\n^\n", None).unwrap();
+    assert_eq!(guessed.transactions[0].date, "2018-08-27");
+
+    let mixed = parse("!Type:Bank\nD13/01/2020\nT1\n^\nD01/13/2020\nT2\n^\n", None).unwrap_err();
+    assert_eq!(
+        mixed.details,
+        "Could not guess the date format: some dates are day-first and some are month-first"
     );
 
     let price = parse("!Type:Prices\nnot a price\n^\n", "%m/%d/%y").unwrap_err();

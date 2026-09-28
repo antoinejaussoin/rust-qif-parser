@@ -11,7 +11,7 @@ use std::fmt;
 /// `file_type` is the suffix of the last `!Type:` header in the file (`Bank`, `Invst`,
 /// `Cat`, ...). A Quicken export contains several lists; each list is returned in its
 /// own collection rather than being mixed into `transactions`.
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Qif<'a> {
     /// Suffix of the last `!Type:` header. Empty when the file has none.
     pub file_type: &'a str,

@@ -1,4 +1,4 @@
-use super::date::parse_date;
+use super::date::{guess_format, parse_date};
 use super::errors::QifParsingError;
 use super::investment::QifInvestment;
 use super::number::{parse_amount, parse_price_value};
@@ -9,19 +9,45 @@ use super::records::{
 use super::split::QifSplit;
 use super::transaction::{QifInvoice, QifInvoiceLine, QifTransaction};
 
+/// A date pattern for [`parse`].
+///
+/// Pass a [chrono strftime](https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers)
+/// string to force the format. Pass `None` to guess it from the dates in the file.
+pub trait DateFormat {
+    fn chrono_format(&self) -> Option<&str>;
+}
+
+impl DateFormat for &str {
+    fn chrono_format(&self) -> Option<&str> {
+        Some(*self)
+    }
+}
+
+impl DateFormat for Option<&str> {
+    fn chrono_format(&self) -> Option<&str> {
+        *self
+    }
+}
+
 /// Parse the text of a QIF file.
 ///
-/// `date_format` is a [chrono strftime](https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers)
-/// pattern, because QIF does not define one date format. Examples for 1 November 1982:
+/// `date_format` is either a chrono pattern or `None`. QIF does not define one
+/// date format. Examples for 1 November 1982, when the format is passed explicitly:
 ///
 /// - `01/11/1982` -> `%d/%m/%Y`
 /// - `01/11/82` -> `%d/%m/%y`
 /// - `11/01/1982` -> `%m/%d/%Y`
 /// - `11/01'1982` -> `%m/%d'%Y`
 ///
+/// With `None`, a number above 12 decides the order, because it cannot be a month.
+/// `27/08/2018` is day-first and `12/29/10` is month-first. When every date in the
+/// file could be read either way, the guess is month-first (Quicken's default):
+/// `6/1/94` is 1 June 1994. Pass `"%d/%m/%y"` when that file is actually 6 January.
+/// A `'` before the year is detected on its own (`2/14'2020`, `12/21' 7`).
+///
 /// Quicken sometimes pads a single-digit day with a space (`6/ 1/94`). That form is accepted
 /// for the usual `%d` / `%m` patterns. A space that belongs to the format itself, such as
-/// the `' 7` year in `12/21' 7`, is left for `date_format` to match.
+/// the `' 7` year in `12/21' 7`, is left for the format to match.
 ///
 /// Bank, cash, card, asset, liability, invoice and bill sections become [`Qif::transactions`].
 /// Investment sections become [`Qif::investments`]. Account, category, class, tag, security,
@@ -31,8 +57,19 @@ use super::transaction::{QifInvoice, QifInvoiceLine, QifTransaction};
 ///
 /// A record that ends at the next header or at the end of the file is kept, even when the
 /// closing `^` is missing. A `^` that does not follow any fields is ignored.
-pub fn parse<'a>(qif_content: &'a str, date_format: &str) -> Result<Qif<'a>, QifParsingError> {
-    let mut parser = Parser::new(date_format);
+pub fn parse<'a>(
+    qif_content: &'a str,
+    date_format: impl DateFormat,
+) -> Result<Qif<'a>, QifParsingError> {
+    let guessed;
+    let format = match date_format.chrono_format() {
+        Some(format) => format,
+        None => {
+            guessed = guess_format(&collect_date_samples(qif_content))?;
+            guessed
+        }
+    };
+    let mut parser = Parser::new(format);
     parser.parse(qif_content)?;
     Ok(parser.result)
 }
@@ -534,6 +571,94 @@ fn split_code(line: &str) -> Option<(char, &str)> {
     let mut chars = line.chars();
     let code = chars.next()?;
     Some((code, chars.as_str()))
+}
+
+fn collect_date_samples(content: &str) -> Vec<&str> {
+    let content = content.strip_prefix('\u{feff}').unwrap_or(content);
+    let mut section = Section::None;
+    let mut xs_open = false;
+    let mut samples = Vec::new();
+    for line in content.split(['\n', '\r']) {
+        let line = line.trim_start();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some(found) = directive(line) {
+            xs_open = false;
+            if let Directive::Section(next, _) = found {
+                section = next;
+            }
+            continue;
+        }
+        if line.trim() == "^" {
+            xs_open = false;
+            continue;
+        }
+        match section {
+            Section::None | Section::Bank => note_bank_date(line, &mut xs_open, &mut samples),
+            Section::Investment => {
+                if let Some(('D', value)) = split_code(line) {
+                    samples.push(value);
+                }
+            }
+            Section::Account => {
+                if let Some(('/', value)) = split_code(line) {
+                    samples.push(value);
+                }
+            }
+            Section::Memorized => {
+                if let Some((code, value)) = split_code(line)
+                    && (code == '1' || code == 'D')
+                {
+                    samples.push(value);
+                }
+            }
+            Section::Prices => {
+                if let Some(date) = price_date_sample(line) {
+                    samples.push(date);
+                }
+            }
+            Section::Category
+            | Section::Budget
+            | Section::Class
+            | Section::Tag
+            | Section::Security
+            | Section::Skip => {}
+        }
+    }
+    samples
+}
+
+fn note_bank_date<'a>(line: &'a str, xs_open: &mut bool, samples: &mut Vec<&'a str>) {
+    if *xs_open && !line.starts_with('X') {
+        return;
+    }
+    let Some((code, value)) = split_code(line) else {
+        return;
+    };
+    match code {
+        'D' => samples.push(value),
+        'X' => {
+            *xs_open = false;
+            if let Some((sub, sub_value)) = split_code(value) {
+                match sub {
+                    'E' | 'D' => samples.push(sub_value),
+                    'S' => *xs_open = true,
+                    _ => {}
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+fn price_date_sample(line: &str) -> Option<&str> {
+    let fields = split_csv(line);
+    if fields.len() == 3 {
+        Some(unquote(fields[2]))
+    } else {
+        None
+    }
 }
 
 fn parse_price_line<'a>(line: &'a str, date_format: &str) -> Result<QifPrice<'a>, QifParsingError> {

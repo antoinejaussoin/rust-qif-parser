@@ -8,6 +8,12 @@ Very high performance QIF (Quicken Interchange Format) parser in Rust.
 qif_parser = "0.6"
 ```
 
+### Parsing with a date format (preferred)
+
+Pass a [chrono format](https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers) whenever you know how the file writes dates. That is the call to use for a bank export, a known Quicken locale, or any file whose dates all fall on the 1st–12th. The format is applied to every date, so an ambiguous file cannot be read the wrong way around.
+
+`02/10/2020` with `"%d/%m/%Y"` is 2 October 2020. The same text with `None` is 10 February 2020.
+
 ```rust
 use qif_parser::parse;
 
@@ -28,7 +34,42 @@ LFood:Groceries
 }
 ```
 
-`parse` takes the file text and a [chrono date format](https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers). Dates come back as `YYYY-MM-DD`, so this example prints `2020-10-02 -100 Amazon.com`.
+The same date, written for other locales:
+
+- `02/10/2020` with `%d/%m/%Y` is 2 October 2020
+- `02/10/20` with `%d/%m/%y` is 2 October 2020
+- `10/02/2020` with `%m/%d/%Y` is 2 October 2020
+- `10/02'2020` with `%m/%d'%Y` is 2 October 2020
+
+`6/1/94` with `%m/%d/%y` is 1 June 1994. With `%d/%m/%y` it is 6 January 1994.
+
+### Parsing without a date format
+
+`parse(qif, None)` guesses the format from the dates in the file. A number above 12 fixes the order, because it cannot be a month. In this file `27` has to be the day, so the guess is `%d/%m/%Y` and the example prints `2018-08-27 -100 Amazon.com`.
+
+```rust
+use qif_parser::parse;
+
+fn main() -> Result<(), qif_parser::errors::QifParsingError> {
+    let qif = "\
+!Type:Bank
+D27/08/2018
+T-100.00
+PAmazon.com
+LFood:Groceries
+^
+";
+
+    let parsed = parse(qif, None)?;
+    let first = &parsed.transactions[0];
+    println!("{} {} {}", first.date, first.amount, first.payee);
+    Ok(())
+}
+```
+
+When every date could be read either way, the guess is month-first, which is Quicken's US default. `6/1/94` becomes 1 June 1994, and `02/10/2020` becomes 10 February 2020. That choice is silent: parsing still returns `Ok`. A UK or French export that never uses a day or month above 12 will come back with the day and month swapped.
+
+A `'` before the year is detected on its own (`2/14'2020`, `12/21' 7`).
 
 ## What is QIF?
 
@@ -38,13 +79,13 @@ You can read more on [this Wikipedia article](https://en.wikipedia.org/wiki/Quic
 
 ## What does this library do?
 
-Pass the text of a QIF file and a [chrono date format](https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers). You get a `Qif` value back: transactions, investments, and the other lists Quicken puts in the same file (accounts, categories, classes, tags, securities, prices, memorized transactions).
+Pass the text of a QIF file. The date format is guessed, or you can still pass a [chrono date format](https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers). You get a `Qif` value back: transactions, investments, and the other lists Quicken puts in the same file (accounts, categories, classes, tags, securities, prices, memorized transactions).
 
 QIF does not define one date format or one way to write an amount, and a single file can switch register type in the middle. The parser follows the section it is in, so `!Account` / `TBank` is an account type, a category's `T` line is a tax flag, and a later `!Type:Bank` is a bank register again after an investment section.
 
 ## How thoroughly is it tested?
 
-`cargo test` runs 60 tests. They are split four ways:
+`cargo test` runs 63 tests. They are split four ways:
 
 - `tests/integration_test.rs` holds the original bank-file fixtures. Those tests are unchanged and still pass.
 - `tests/spec_examples.rs` parses samples copied from published QIF descriptions.
@@ -166,7 +207,7 @@ Wikipedia's import example is tested the same way: `!Account` / `NJoint Brokerag
 - Invoice `X` fields, including an `XS` description that continues onto the next line. A `T` line in that continuation stays part of the description.
 - Memorized checks (`KC`), a loan with the seven amortization lines (`1` through `7`), and a memorized buy (`KI`). None of those are added to the register.
 
-Dates are only as ambiguous as the format you pass. `D6/1/94` is June 1994 with `%m/%d/%y` and 6 January 1994 with `%d/%m/%y`. The tests pass the format explicitly and assert the resulting `YYYY-MM-DD` date. One amount rule is fixed because QIF itself is not: a comma followed by exactly three digits is a thousands separator (`1,000` is 1000, `10,000.00` is 10000), while `1,50` and `1.234,56` are European decimals.
+Dates are guessed when no format is passed. A number above 12 fixes the order, and an ambiguous file such as `D6/1/94` is read month-first (1 June 1994). The same file with `%d/%m/%y` is 6 January 1994. The tests pass the format explicitly and parse the same examples again with `None`. One amount rule is fixed because QIF itself is not: a comma followed by exactly three digits is a thousands separator (`1,000` is 1000, `10,000.00` is 10000), while `1,50` and `1.234,56` are European decimals.
 
 ## What about performance?
 
@@ -199,6 +240,7 @@ https://stevedonovan.github.io/rust-gentle-intro/6-error-handling.html
 
 ### Version 0.6.0
 
+- Guess the date format when `parse` is called with `None`. An explicit chrono format still takes priority.
 - Parse every section of a Quicken file: accounts, categories, classes, tags, securities, prices, and memorized transactions, not only a single bank or investment register.
 - Read investment commission and amount transferred, invoice lines, split percentages, and the account each record belongs to.
 - Accept the amount and date spellings used by Quicken and by bank exports.
