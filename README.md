@@ -2,6 +2,34 @@
 
 Very high performance QIF (Quicken Interchange Format) parser in Rust.
 
+## Usage
+
+```toml
+qif_parser = "0.6"
+```
+
+```rust
+use qif_parser::parse;
+
+fn main() -> Result<(), qif_parser::errors::QifParsingError> {
+    let qif = "\
+!Type:Bank
+D02/10/2020
+T-100.00
+PAmazon.com
+LFood:Groceries
+^
+";
+
+    let parsed = parse(qif, "%d/%m/%Y")?;
+    let first = &parsed.transactions[0];
+    println!("{} {} {}", first.date, first.amount, first.payee);
+    Ok(())
+}
+```
+
+`parse` takes the file text and a [chrono date format](https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers). Dates come back as `YYYY-MM-DD`, so this example prints `2020-10-02 -100 Amazon.com`.
+
 ## What is QIF?
 
 QIF is a format invented by Quicken to record financial data.
