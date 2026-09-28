@@ -1,0 +1,22 @@
+!Account
+NAssets:Investments:Mutual Fund
+TInvst
+^
+!Type:Invst
+D10/30/2006
+Q0.9
+T500
+PPurchase
+NBuyX
+L[Assets:Investments:Mutual Fund:Cash]
+YFOO
+^
+!Type:Invst
+D11/28/2006
+Q0.897
+T100
+PSale
+NSellX
+L[Assets:Investments:Mutual Fund:Cash]
+YFOO
+^

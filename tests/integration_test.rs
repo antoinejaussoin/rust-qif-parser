@@ -1,10 +1,17 @@
 use ::qif_parser::parse;
 use std::fs;
 
+fn parse_both<'a>(content: &'a str, date_format: &str) -> qif_parser::qif::Qif<'a> {
+    let explicit = parse(content, date_format).unwrap();
+    let automatic = parse(content, None).unwrap();
+    assert_eq!(explicit, automatic);
+    explicit
+}
+
 #[test]
 fn test_wikipedia_simple_example() {
     let content = fs::read_to_string("data/wikipedia_simple.qif").unwrap();
-    let result = parse(&content, "%m/%d/%y").unwrap();
+    let result = parse_both(&content, "%m/%d/%y");
     assert!(!content.is_empty());
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
@@ -32,7 +39,7 @@ fn test_wikipedia_simple_example() {
 #[test]
 fn test_wikipedia_investment_example() {
     let content = fs::read_to_string("data/wikipedia_investments.qif").unwrap();
-    let result = parse(&content, "%m/%d'%y").unwrap();
+    let result = parse_both(&content, "%m/%d'%y");
     assert!(!content.is_empty());
 
     // QIF metadata
@@ -59,7 +66,7 @@ fn test_wikipedia_investment_example() {
 #[test]
 fn test_wikipedia_example() {
     let content = fs::read_to_string("data/wikipedia.qif").unwrap();
-    let result = parse(&content, "%m/%d'%Y").unwrap();
+    let result = parse_both(&content, "%m/%d'%Y");
     assert!(!content.is_empty());
     // QIF metadata
     assert_eq!(result.file_type, "Bank");
@@ -94,7 +101,7 @@ fn test_wikipedia_example() {
 #[test]
 fn test_monzo_example() {
     let content = fs::read_to_string("data/monzo.qif").unwrap();
-    let result = parse(&content, "%d/%m/%Y").unwrap();
+    let result = parse_both(&content, "%d/%m/%Y");
     assert!(!content.is_empty());
 
     // QIF metadata
@@ -123,7 +130,7 @@ fn test_monzo_example() {
 #[test]
 fn test_cic_example() {
     let content = fs::read_to_string("data/cic.qif").unwrap();
-    let result = parse(&content, "%d/%m/%y").unwrap();
+    let result = parse_both(&content, "%d/%m/%y");
     assert!(!content.is_empty());
 
     // QIF metadata
@@ -152,7 +159,7 @@ fn test_cic_example() {
 #[test]
 fn test_nasty_example() {
     let content = fs::read_to_string("data/nasty.qif").unwrap();
-    let result = parse(&content, "%d/%m/%Y").unwrap();
+    let result = parse_both(&content, "%d/%m/%Y");
     assert!(!content.is_empty());
 
     // QIF metadata
@@ -214,7 +221,7 @@ fn test_errors() {
 #[test]
 fn test_american_express() {
     let content = fs::read_to_string("data/amex.qif").unwrap();
-    let result = parse(&content, "%d/%m/%Y").unwrap();
+    let result = parse_both(&content, "%d/%m/%Y");
     assert!(!content.is_empty());
 
     // QIF metadata

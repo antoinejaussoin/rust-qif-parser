@@ -1,0 +1,76 @@
+!Option:AutoSwitch
+!Account
+NChecking
+TBank
+DPrimary checking
+^
+NBrokerage
+TInvst
+DStocks
+^
+NVisa
+TCCard
+DRewards card
+L2,500.00
+/1/15/2020
+$-40.50
+^
+!Clear:AutoSwitch
+!Account
+NChecking
+TBank
+^
+!Type:Bank
+!Option:AllXfr
+D1/2/2020
+T-1,234.50
+PGrocery Store
+LGroceries/Personal
+N1024
+C*
+Mweekly shop
+A1 High Street
+ALondon
+F
+SGroceries
+Efood
+$-40.00
+%75
+SHousehold
+$-10.00
+%25
+^
+!Account
+NBrokerage
+TInvst
+^
+!Type:Invst
+D3/4/2020
+NBuy
+YACME
+I12.50
+Q10
+O9.95
+T134.95
+CR
+MOpening lot
+PFrom checking
+L[Checking]
+$134.95
+^
+D3/5/2020
+NSell
+YACME
+U50.00
+T50
+^
+^
+!Account
+NChecking
+TBank
+^
+!Type:Bank
+D3/6/2020
+T20.00
+PRefund
+^
