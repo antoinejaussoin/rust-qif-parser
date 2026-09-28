@@ -1,5 +1,7 @@
+use std::hint::black_box;
+
 use ::qif_parser::parse;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let item = "D2/10'2020

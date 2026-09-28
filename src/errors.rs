@@ -3,25 +3,21 @@ use std::fmt;
 
 #[derive(Debug)]
 pub struct QifParsingError {
-  pub details: String,
+    pub details: String,
 }
 
 impl QifParsingError {
-  pub fn new(msg: &str) -> QifParsingError {
-    QifParsingError {
-      details: msg.to_string(),
+    pub fn new(msg: &str) -> QifParsingError {
+        QifParsingError {
+            details: msg.to_string(),
+        }
     }
-  }
 }
 
 impl fmt::Display for QifParsingError {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{}", self.details)
-  }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.details)
+    }
 }
 
-impl Error for QifParsingError {
-  fn description(&self) -> &str {
-    &self.details
-  }
-}
+impl Error for QifParsingError {}
