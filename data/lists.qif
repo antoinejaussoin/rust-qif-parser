@@ -1,0 +1,46 @@
+!Type:Cat
+NFood:Groceries
+DEveryday food
+E
+T
+B250.00
+B300.5
+RSchedule A
+^
+NSalary
+DPaycheck
+I
+^
+NMisc
+DUnspecified type
+^
+NBoth
+I
+E
+^
+!Type:Class
+NTax
+DTax deductible
+^
+NVacation
+^
+!Type:Tag
+NHoliday
+DTime off
+^
+!Type:Security
+NHexcel Corp
+SHXL
+TStock
+GGrowth
+^
+!Type:Security
+NBoston Pptys
+SBXP
+TMutual Fund
+^
+!Type:Budget
+NFood:Groceries
+B10
+B20
+^

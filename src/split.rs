@@ -7,6 +7,9 @@ pub struct QifSplit<'a> {
     pub category: &'a str,
     pub memo: &'a str,
     pub amount: f64,
+    /// From a `%` line. Zero when the split is given as an amount instead.
+    #[serde(default)]
+    pub percentage: f64,
     pub number_of_the_check: &'a str,
 }
 
