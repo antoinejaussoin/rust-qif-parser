@@ -2,7 +2,7 @@
 name = "qif_parser"
 description = "This library parses Quicken Interchange Format (QIF) files"
 license = "MIT"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Antoine Jaussoin <antoine@jaussoin.com>"]
 edition = "2024"
 rust-version = "1.98"
